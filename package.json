@@ -1,0 +1,32 @@
+{
+  "name": "burial-records-app",
+  "version": "1.0.0",
+  "description": "Burial Records Management - Data Capture and Records Pages",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode dev",
+    "prod": "vite --mode prod",
+    "build:dev": "vite build --mode dev",
+    "build:prod": "vite build --mode prod",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .js,.jsx"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "styled-components": "^6.1.0",
+    "axios": "^1.6.0",
+    "recharts": "^2.10.0",
+    "react-icons": "^4.12.0",
+    "react-datepicker": "^4.21.0",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.5.31",
+    "xlsx": "^0.18.5",
+    "html2canvas": "^1.4.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.0",
+    "vite": "^5.0.0"
+  }
+}
