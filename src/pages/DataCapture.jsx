@@ -1719,10 +1719,9 @@ function DataCapture() {
           </SectionTitle>
           {(formData.ageCategory === "Stillborn" ||
             formData.ageCategory === "Infant") && (
-            <HelperText style={{ marginBottom: theme.spacing.lg }}>
-              <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
-              Burial permit details are not required for Stillborn and Infant
-              cases. These fields are disabled.
+            <HelperText style={{ marginBottom: "16px", padding: "12px", backgroundColor: "#fef3c7", borderRadius: "6px", color: "#92400e" }}>
+              <MdInfoOutline size={14} style={{ marginRight: "4px", flexShrink: 0 }} />
+              Burial permit details are not required for Stillborn and Infant cases. These fields are disabled.
             </HelperText>
           )}
           <FormGrid>
