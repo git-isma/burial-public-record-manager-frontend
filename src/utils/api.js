@@ -40,6 +40,8 @@ export const API_ENDPOINTS = {
     GET_PUBLIC_RECORDS: '/public/records',
     PRESIGNED_URL: '/public/presigned-url',
     LOCATIONS: '/locations',
+    LATEST_APPLICANT_ID: '/public/latest-applicant-id',
+    LATEST_RECEIPT_NO: '/public/latest-receipt-no',
   },
   UPLOAD: {
     PRESIGNED_URL: '/upload/presigned-url',
@@ -54,8 +56,8 @@ const apiService = {
   updateRecord: (id, data) => axiosInstance.put(API_ENDPOINTS.RECORDS.UPDATE(id), data),
   deleteRecord: (id) => axiosInstance.delete(API_ENDPOINTS.RECORDS.DELETE(id)),
   bulkDeleteRecords: (recordIds) => axiosInstance.delete(API_ENDPOINTS.RECORDS.BULK_DELETE, { data: { recordIds } }),
-  getPresignedUrl: (fileName, fileType, folder) =>
-    axiosInstance.post(API_ENDPOINTS.UPLOAD.PRESIGNED_URL, { fileName, fileType, folder }),
+  getPresignedUrl: (fileName, fileType, folder, extraData = {}) =>
+    axiosInstance.post(API_ENDPOINTS.UPLOAD.PRESIGNED_URL, { fileName, fileType, folder, ...extraData }),
 
   // Public API methods (no auth required)
   submitRecordPublic: (data) => publicAxiosInstance.post(API_ENDPOINTS.PUBLIC.SUBMIT_RECORD, data),
@@ -69,9 +71,11 @@ const apiService = {
     if (filters?.limit) params.limit = filters.limit;
     return publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.GET_PUBLIC_RECORDS, { params });
   },
-  getPresignedUrlPublic: (fileName, fileType, folder) =>
-    publicAxiosInstance.post(API_ENDPOINTS.PUBLIC.PRESIGNED_URL, { fileName, fileType, folder }),
+  getPresignedUrlPublic: (fileName, fileType, folder, extraData = {}) =>
+    publicAxiosInstance.post(API_ENDPOINTS.PUBLIC.PRESIGNED_URL, { fileName, fileType, folder, ...extraData }),
   getLocations: () => publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.LOCATIONS),
+  getLatestApplicantId: () => publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.LATEST_APPLICANT_ID),
+  getLatestReceiptNo: () => publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.LATEST_RECEIPT_NO),
 };
 
 export default apiService;

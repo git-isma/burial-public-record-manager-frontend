@@ -1,11 +1,11 @@
 import apiService from './api';
 
-export const uploadToS3 = async (file, folder = 'public-records') => {
+export const uploadToS3 = async (file, folder = 'public-records', extraData = {}) => {
     try {
         console.log(`📤 Uploading ${file.name} to S3 folder: ${folder}`);
 
         // Use public presigned URL endpoint (no auth required)
-        const response = await apiService.getPresignedUrlPublic(file.name, file.type, folder);
+        const response = await apiService.getPresignedUrlPublic(file.name, file.type, folder, extraData);
         console.log('🔍 Full API Response:', response);
         console.log('🔍 Response Data:', response.data);
 
@@ -39,8 +39,8 @@ export const uploadToS3 = async (file, folder = 'public-records') => {
     }
 };
 
-export const uploadMultipleToS3 = async (files, folder = 'public-records') => {
-    const uploadPromises = files.map(file => uploadToS3(file, folder));
+export const uploadMultipleToS3 = async (files, folder = 'public-records', extraData = {}) => {
+    const uploadPromises = files.map(file => uploadToS3(file, folder, extraData));
     return Promise.all(uploadPromises);
 };
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import apiService from '../utils/api';
-import { generateReceiptPDF } from '../utils/receiptGenerator';
+import { generateAcknowledgementPDF } from '../utils/acknowledgementGenerator';
 import { useSettings } from '../contexts/SettingsContext';
 import { useToast } from '../contexts/ToastContext';
 import { Card, PageHeader, Button, theme } from '../styles/CommonStyles';
@@ -453,14 +453,14 @@ function Records() {
     fetchRecords({ filters: emptyFilters, page: newPage });
   };
 
-  const handleDownloadReceipt = async (record) => {
+  const handleDownloadAcknowledgement = async (record) => {
     try {
-      showToast('Generating receipt PDF...', 'info');
-      generateReceiptPDF(record, formatDate);
-      showToast('Receipt downloaded successfully!', 'success');
+      showToast('Generating acknowledgement PDF...', 'info');
+      generateAcknowledgementPDF(record, formatDate);
+      showToast('Acknowledgement downloaded successfully!', 'success');
     } catch (err) {
-      console.error('Error generating receipt:', err);
-      showToast('Failed to generate receipt', 'error');
+      console.error('Error generating acknowledgement:', err);
+      showToast('Failed to generate acknowledgement', 'error');
     }
   };
 
@@ -647,10 +647,10 @@ function Records() {
                 <CardFooter>
                   <DownloadButton
                     $variant="primary"
-                    onClick={() => handleDownloadReceipt(record)}
+                    onClick={() => handleDownloadAcknowledgement(record)}
                   >
                     <MdDownload size={18} />
-                    Download Receipt
+                    Download Acknowledgement
                   </DownloadButton>
                 </CardFooter>
               </RecordCard>
