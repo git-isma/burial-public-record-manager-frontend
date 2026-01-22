@@ -607,6 +607,7 @@ function DataCapture() {
   };
 
   // Helper function to generate next applicant ID
+  // Helper function to generate next applicant ID
   const generateNextApplicantId = (latestId) => {
     const currentYear = new Date().getFullYear();
 
@@ -623,7 +624,9 @@ function DataCapture() {
     if (latestYear === currentYear) {
       // Same year, increment the number
       const nextNumber = latestNumber + 1;
-      return `APP-${currentYear}-${String(nextNumber).padStart(4, "0")}`;
+      const result = `APP-${currentYear}-${String(nextNumber).padStart(4, "0")}`;
+      console.log(`Incrementing ${latestId} to ${result}`);
+      return result;
     } else {
       // New year, start from 0001
       return `APP-${currentYear}-0001`;
@@ -732,12 +735,15 @@ function DataCapture() {
             apiService.getLatestReceiptNo(),
           ]);
 
-          const latestId = appIdRes.data?.latestApplicantId || null;
-          const latestReceiptNo = receiptNoRes.data?.latestReceiptNo || null;
+          console.log("API Response:", appIdRes.data);
+          const latestId = appIdRes.data?.data?.applicantId || appIdRes.data?.applicantId || appIdRes.data?.latestApplicantId || null;
+          const latestReceiptNo = receiptNoRes.data?.data?.receiptNo || receiptNoRes.data?.receiptNo || receiptNoRes.data?.latestReceiptNo || null;
 
+          console.log("Extracted latestId:", latestId);
           const newApplicantId = generateNextApplicantId(latestId);
           const newReceiptNo = generateNextReceiptNo(latestReceiptNo);
 
+          console.log("Setting form with newApplicantId:", newApplicantId);
           setFormData((prev) => ({
             ...prev,
             applicantId: newApplicantId,
@@ -748,6 +754,7 @@ function DataCapture() {
           // Fallback: generate IDs starting from 0001
           const newApplicantId = generateNextApplicantId(null);
           const newReceiptNo = generateNextReceiptNo(null);
+
           setFormData((prev) => ({
             ...prev,
             applicantId: newApplicantId,
@@ -1027,7 +1034,7 @@ function DataCapture() {
         "middleName",
         "mpesaRefNo",
       ];
-      const excludedFields = ["recordNumber", "applicantId"]; // Exclude recordNumber and applicantId from payload
+      const excludedFields = ["recordNumber"]; // Exclude recordNumber from payload
 
       Object.keys(formData).forEach((key) => {
         const value = formData[key];
@@ -1048,6 +1055,12 @@ function DataCapture() {
       // Map applicantPhone to applicantMobile for backend consistency
       if (formData.applicantPhone) {
         recordData.applicantMobile = formData.applicantPhone;
+      }
+
+      // Map applicantIdPassportNo to applicantIdPassport for backend consistency
+      if (formData.applicantIdPassportNo) {
+        recordData.applicantIdPassport = formData.applicantIdPassportNo;
+        delete recordData.applicantIdPassportNo;
       }
 
       // Rename amountPayableBurial to amountPaidBurial for backend
@@ -1074,7 +1087,15 @@ function DataCapture() {
             "📄 Generating acknowledgement PDF for:",
             submittedRecord.id || submittedRecord._id
           );
-          generateAcknowledgementPDF(submittedRecord, settings.formatDate);
+          // Merge submitted record with form data to ensure all details are included
+          const recordWithDetails = {
+            ...formData,
+            ...submittedRecord,
+            // Map field names for consistency
+            amountPaidBurial: formData.amountPayableBurial || submittedRecord.amountPaidBurial,
+            applicantIdPassport: formData.applicantIdPassportNo || submittedRecord.applicantIdPassport,
+          };
+          generateAcknowledgementPDF(recordWithDetails, settings.formatDate);
           success("Acknowledgement PDF downloaded successfully!");
         } catch (pdfErr) {
           console.error("⚠️ Error generating acknowledgement PDF:", pdfErr);
@@ -1138,8 +1159,8 @@ function DataCapture() {
           apiService.getLatestReceiptNo(),
         ]);
 
-        const latestId = appIdRes.data?.latestApplicantId || null;
-        const latestReceiptNo = receiptNoRes.data?.latestReceiptNo || null;
+        const latestId = appIdRes.data?.data?.applicantId || appIdRes.data?.applicantId || appIdRes.data?.latestApplicantId || null;
+        const latestReceiptNo = receiptNoRes.data?.data?.receiptNo || receiptNoRes.data?.receiptNo || receiptNoRes.data?.latestReceiptNo || null;
 
         const newApplicantId = generateNextApplicantId(latestId);
         const newReceiptNo = generateNextReceiptNo(latestReceiptNo);
@@ -1719,14 +1740,20 @@ function DataCapture() {
           </SectionTitle>
           {(formData.ageCategory === "Stillborn" ||
             formData.ageCategory === "Infant") && (
-            <HelperText style={{ marginBottom: "16px", padding: "12px", backgroundColor: "#fef3c7", borderRadius: "6px", color: "#92400e" }}>
-              <MdInfoOutline size={14} style={{ marginRight: "4px", flexShrink: 0 }} />
-              Burial permit details are not required for Stillborn and Infant cases. These fields are disabled.
-            </HelperText>
-          )}
+              <HelperText style={{ marginBottom: "16px", padding: "12px", backgroundColor: "#fef3c7", borderRadius: "6px", color: "#92400e" }}>
+                <MdInfoOutline size={14} style={{ marginRight: "4px", flexShrink: 0 }} />
+                Burial permit details are not required for Stillborn and Infant cases. These fields are disabled.
+              </HelperText>
+            )}
           <FormGrid>
             <FormGroup>
-              <label>Burial Permit Number *</label>
+              <label>
+                Burial Permit Number{" "}
+                {formData.ageCategory !== "Stillborn" &&
+                  formData.ageCategory !== "Infant"
+                  ? "*"
+                  : ""}
+              </label>
               <input
                 name="burialPermitNumber"
                 value={formData.burialPermitNumber}
@@ -1738,12 +1765,12 @@ function DataCapture() {
                 }
                 style={
                   formData.ageCategory === "Stillborn" ||
-                  formData.ageCategory === "Infant"
+                    formData.ageCategory === "Infant"
                     ? {
-                        backgroundColor: "#f3f4f6",
-                        cursor: "not-allowed",
-                        color: "#9ca3af",
-                      }
+                      backgroundColor: "#f3f4f6",
+                      cursor: "not-allowed",
+                      color: "#9ca3af",
+                    }
                     : {}
                 }
                 required={
@@ -1753,7 +1780,13 @@ function DataCapture() {
               />
             </FormGroup>
             <FormGroup>
-              <label>Date of Burial Permit *</label>
+              <label>
+                Date of Burial Permit{" "}
+                {formData.ageCategory !== "Stillborn" &&
+                  formData.ageCategory !== "Infant"
+                  ? "*"
+                  : ""}
+              </label>
               <ModernDatePicker
                 value={formData.burialPermitDate}
                 onChange={handleChange}
@@ -1770,7 +1803,13 @@ function DataCapture() {
               />
             </FormGroup>
             <FormGroup>
-              <label>Permit Issued By *</label>
+              <label>
+                Permit Issued By{" "}
+                {formData.ageCategory !== "Stillborn" &&
+                  formData.ageCategory !== "Infant"
+                  ? "*"
+                  : ""}
+              </label>
               <input
                 name="burialPermitIssuedBy"
                 value={formData.burialPermitIssuedBy}
@@ -1782,12 +1821,12 @@ function DataCapture() {
                 }
                 style={
                   formData.ageCategory === "Stillborn" ||
-                  formData.ageCategory === "Infant"
+                    formData.ageCategory === "Infant"
                     ? {
-                        backgroundColor: "#f3f4f6",
-                        cursor: "not-allowed",
-                        color: "#9ca3af",
-                      }
+                      backgroundColor: "#f3f4f6",
+                      cursor: "not-allowed",
+                      color: "#9ca3af",
+                    }
                     : {}
                 }
                 required={
@@ -1797,7 +1836,13 @@ function DataCapture() {
               />
             </FormGroup>
             <FormGroup>
-              <label>Issuer Contact Address *</label>
+              <label>
+                Issuer Contact Address{" "}
+                {formData.ageCategory !== "Stillborn" &&
+                  formData.ageCategory !== "Infant"
+                  ? "*"
+                  : ""}
+              </label>
               <input
                 name="burialPermitIssuedByContact"
                 value={formData.burialPermitIssuedByContact}
@@ -1809,12 +1854,12 @@ function DataCapture() {
                 }
                 style={
                   formData.ageCategory === "Stillborn" ||
-                  formData.ageCategory === "Infant"
+                    formData.ageCategory === "Infant"
                     ? {
-                        backgroundColor: "#f3f4f6",
-                        cursor: "not-allowed",
-                        color: "#9ca3af",
-                      }
+                      backgroundColor: "#f3f4f6",
+                      cursor: "not-allowed",
+                      color: "#9ca3af",
+                    }
                     : {}
                 }
                 required={
@@ -1824,7 +1869,13 @@ function DataCapture() {
               />
             </FormGroup>
             <FormGroup>
-              <label>Permit Issued To *</label>
+              <label>
+                Permit Issued To{" "}
+                {formData.ageCategory !== "Stillborn" &&
+                  formData.ageCategory !== "Infant"
+                  ? "*"
+                  : ""}
+              </label>
               <input
                 name="burialPermitIssuedTo"
                 value={formData.burialPermitIssuedTo}
@@ -1836,12 +1887,12 @@ function DataCapture() {
                 }
                 style={
                   formData.ageCategory === "Stillborn" ||
-                  formData.ageCategory === "Infant"
+                    formData.ageCategory === "Infant"
                     ? {
-                        backgroundColor: "#f3f4f6",
-                        cursor: "not-allowed",
-                        color: "#9ca3af",
-                      }
+                      backgroundColor: "#f3f4f6",
+                      cursor: "not-allowed",
+                      color: "#9ca3af",
+                    }
                     : {}
                 }
                 required={
@@ -1851,7 +1902,13 @@ function DataCapture() {
               />
             </FormGroup>
             <FormGroup>
-              <label>Recipient Contact Number *</label>
+              <label>
+                Recipient Contact Number{" "}
+                {formData.ageCategory !== "Stillborn" &&
+                  formData.ageCategory !== "Infant"
+                  ? "*"
+                  : ""}
+              </label>
               <input
                 type="tel"
                 name="burialPermitIssuedToContact"
@@ -1864,12 +1921,12 @@ function DataCapture() {
                 }
                 style={
                   formData.ageCategory === "Stillborn" ||
-                  formData.ageCategory === "Infant"
+                    formData.ageCategory === "Infant"
                     ? {
-                        backgroundColor: "#f3f4f6",
-                        cursor: "not-allowed",
-                        color: "#9ca3af",
-                      }
+                      backgroundColor: "#f3f4f6",
+                      cursor: "not-allowed",
+                      color: "#9ca3af",
+                    }
                     : {}
                 }
                 required={
