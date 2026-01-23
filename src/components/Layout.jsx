@@ -203,7 +203,7 @@ function Layout() {
           <img src={ismaLogo} alt="ISMA Logo" />
           <div>
             <h2>Burial Records</h2>
-            <p>ISMA OFFICIAL SYSTEM</p>
+            <p>ISMA LIVE SYSTEM</p>
           </div>
         </SidebarHeader>
         <NavLinksContainer>

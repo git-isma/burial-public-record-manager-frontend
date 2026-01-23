@@ -79,13 +79,13 @@ const DatePickerWrapper = styled.div`
     }
 
     &:hover {
-      border-color: #6366f1;
+      border-color: #3D2F2F;
     }
 
     &:focus {
       outline: none;
-      border-color: #6366f1;
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      border-color: #3D2F2F;
+      box-shadow: 0 0 0 3px rgba(61, 47, 47, 0.1);
     }
   }
 
@@ -119,7 +119,7 @@ const DatePickerWrapper = styled.div`
 
     &:hover {
       background: #eef2ff;
-      color: #6366f1;
+      color: #3D2F2F;
 
       body.dark-theme & {
         background: #3d2d5d;
@@ -129,10 +129,10 @@ const DatePickerWrapper = styled.div`
   }
 
   .react-datepicker__day--selected {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+    background: linear-gradient(135deg, #3D2F2F 0%, #4d4545 100%) !important;
     color: white !important;
     font-weight: 700;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 2px 8px rgba(61, 47, 47, 0.4);
 
     body.dark-theme & {
       background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
@@ -142,7 +142,7 @@ const DatePickerWrapper = styled.div`
 
   .react-datepicker__day--keyboard-selected {
     background: #eef2ff;
-    color: #6366f1;
+    color: #3D2F2F;
 
     body.dark-theme & {
       background: #3d2d5d;
@@ -152,8 +152,8 @@ const DatePickerWrapper = styled.div`
 
   .react-datepicker__day--today {
     font-weight: 600;
-    color: #6366f1;
-    border: 2px solid #6366f1;
+    color: #3D2F2F;
+    border: 2px solid #3D2F2F;
 
     body.dark-theme & {
       color: #a78bfa;
@@ -182,7 +182,7 @@ const DatePickerWrapper = styled.div`
   }
 
   .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
-    border-color: #6366f1;
+    border-color: #3D2F2F;
   }
 
   /* Month View */
@@ -218,7 +218,7 @@ const DatePickerWrapper = styled.div`
 
     &:hover {
       background: #eef2ff;
-      color: #6366f1;
+      color: #3D2F2F;
 
       body.dark-theme & {
         background: #3d2d5d;
@@ -229,7 +229,7 @@ const DatePickerWrapper = styled.div`
 
   .react-datepicker__year-option--selected,
   .react-datepicker__month-option--selected {
-    background: #6366f1;
+    background: #3D2F2F;
     color: white;
     font-weight: 600;
 
@@ -261,9 +261,9 @@ const StyledInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #6366f1;
+    border-color: #3D2F2F;
     background: white;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 4px rgba(61, 47, 47, 0.1);
 
     body.dark-theme & {
       background: #353535;
@@ -272,7 +272,7 @@ const StyledInput = styled.input`
   }
 
   &:hover {
-    border-color: #6366f1;
+    border-color: #3D2F2F;
     background: white;
 
     body.dark-theme & {
@@ -301,7 +301,7 @@ const CalendarIcon = styled.div`
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
-  color: #6366f1;
+  color: #3D2F2F;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -315,59 +315,59 @@ const CalendarIcon = styled.div`
 `;
 
 const CustomInput = forwardRef(({ value, onClick, placeholder }, ref) => (
-    <div style={{ position: 'relative', width: '100%' }}>
-        <StyledInput
-            onClick={onClick}
-            value={value}
-            placeholder={placeholder}
-            readOnly
-            ref={ref}
-        />
-        <CalendarIcon>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-        </CalendarIcon>
-    </div>
+  <div style={{ position: 'relative', width: '100%' }}>
+    <StyledInput
+      onClick={onClick}
+      value={value}
+      placeholder={placeholder}
+      readOnly
+      ref={ref}
+    />
+    <CalendarIcon>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+    </CalendarIcon>
+  </div>
 ));
 
 CustomInput.displayName = 'CustomInput';
 
 function ModernDatePicker({ value, onChange, name, placeholder = "dd - mm - yyyy", ...props }) {
-    const selectedDate = value ? new Date(value) : null;
+  const selectedDate = value ? new Date(value) : null;
 
-    const handleChange = (date) => {
-        if (onChange && name) {
-            const formattedDate = date ? date.toISOString().split('T')[0] : '';
-            onChange({
-                target: {
-                    name: name,
-                    value: formattedDate
-                }
-            });
+  const handleChange = (date) => {
+    if (onChange && name) {
+      const formattedDate = date ? date.toISOString().split('T')[0] : '';
+      onChange({
+        target: {
+          name: name,
+          value: formattedDate
         }
-    };
+      });
+    }
+  };
 
-    return (
-        <DatePickerWrapper>
-            <DatePicker
-                selected={selectedDate}
-                onChange={handleChange}
-                customInput={<CustomInput placeholder={placeholder} />}
-                dateFormat="dd/MM/yyyy"
-                showPopperArrow={false}
-                showMonthDropdown
-                showYearDropdown
-                dropdownMode="select"
-                yearDropdownItemNumber={100}
-                scrollableYearDropdown
-                {...props}
-            />
-        </DatePickerWrapper>
-    );
+  return (
+    <DatePickerWrapper>
+      <DatePicker
+        selected={selectedDate}
+        onChange={handleChange}
+        customInput={<CustomInput placeholder={placeholder} />}
+        dateFormat="dd/MM/yyyy"
+        showPopperArrow={false}
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
+        yearDropdownItemNumber={100}
+        scrollableYearDropdown
+        {...props}
+      />
+    </DatePickerWrapper>
+  );
 }
 
 export default ModernDatePicker;

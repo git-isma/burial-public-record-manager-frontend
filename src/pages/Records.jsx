@@ -167,7 +167,7 @@ const RecordCard = styled(Card)`
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, ${theme.colors.primarySolid} 0%, #8b5cf6 100%);
+    background: #3D2F2F;
   }
 
   &:hover {

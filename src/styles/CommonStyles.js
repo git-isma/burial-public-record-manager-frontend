@@ -2,12 +2,12 @@ import styled from 'styled-components';
 
 export const theme = {
   colors: {
-    primary: '#6366f1',
-    primarySolid: '#6366f1',
-    primaryHover: '#4f46e5',
-    primaryLight: '#818cf8',
-    primaryDark: '#4338ca',
-    secondary: '#3B82F6',
+    primary: '#3D2F2F',
+    primarySolid: '#3D2F2F',
+    primaryHover: '#2a2424',
+    primaryLight: '#4d4545',
+    primaryDark: '#1f1919',
+    secondary: '#3D2F2F',
     success: '#10B981',
     warning: '#F59E0B',
     danger: '#EF4444',
@@ -16,7 +16,7 @@ export const theme = {
     verifiedBg: 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)',
     pending: '#F59E0B',
     pendingBg: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)',
-    completed: '#3B82F6',
+    completed: '#3D2F2F',
     completedBg: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)',
     rejected: '#EF4444',
     rejectedBg: 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)',
@@ -35,7 +35,7 @@ export const theme = {
     bgPrimary: '#FFFFFF',
     bgSecondary: '#f9fafb',
     bgSidebar: '#ffffff',
-    bgGradient: '#6366f1',
+    bgGradient: '#3D2F2F',
     bgCard: '#FFFFFF',
     bgCardHover: '#f9fafb',
     textPrimary: '#18181B',
@@ -101,7 +101,7 @@ export const Card = styled.div`
   padding: ${theme.spacing.lg};
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin-bottom: ${theme.spacing.lg};
-  border: 1px solid ${theme.colors.gray200};
+  border: 2px solid #3D2F2F;
   transition: all ${theme.transitions.base};
 
   body.dark-theme & {
@@ -127,12 +127,12 @@ export const Card = styled.div`
 
 export const Button = styled.button`
   background: ${props => {
-    if (props.$variant === 'primary') return '#6366f1';
+    if (props.$variant === 'primary') return '#3D2F2F';
     if (props.$variant === 'danger') return theme.colors.danger;
     if (props.$variant === 'secondary') return 'white';
     if (props.$variant === 'success') return theme.colors.success;
     if (props.$variant === 'warning') return theme.colors.warning;
-    return '#6366f1';
+    return '#3D2F2F';
   }};
   color: ${props => props.$variant === 'secondary' ? theme.colors.gray700 : 'white'};
   padding: ${props => props.$size === 'small' ? '8px 14px' : '10px 18px'};
@@ -174,7 +174,7 @@ export const Button = styled.button`
 
   &:hover:not(:disabled) {
     background: ${props => {
-    if (props.$variant === 'primary') return '#4f46e5';
+    if (props.$variant === 'primary') return '#2a2424';
     if (props.$variant === 'secondary') return theme.colors.gray50;
     return props.$variant === 'danger' ? '#dc2626' : props.$variant === 'success' ? '#059669' : '#d97706';
   }};

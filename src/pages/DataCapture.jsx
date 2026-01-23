@@ -346,7 +346,7 @@ const InfoIcon = styled.span`
   }
 
   &:hover {
-    color: #3b82f6;
+    color: #3D2F2F;
     opacity: 1;
     transform: scale(1.15);
 
