@@ -678,12 +678,13 @@ function DataCapture() {
     nextOfKinContact: "",
     nextOfKinIdPassport: "",
     burialLocation: "",
+    burialTime: "",
     primaryService: "Burial",
-    amountPayableBurial: "",
-    // secondaryService: "None",
-    // amountPaidSecondary: "",
-    // tertiaryService: "",
-    // amountPaidTertiary: "",
+    amountPaidBurial: "",
+    secondaryService: "None",
+    amountPaidSecondary: 0,
+    tertiaryService: "None",
+    amountPaidTertiary: 0,
     mpesaRefNo: "",
     receiptNo: "",
     burialPermitNumber: "",
@@ -692,7 +693,7 @@ function DataCapture() {
     burialPermitIssuedByContact: "",
     burialPermitIssuedTo: "",
     burialPermitIssuedToContact: "",
-    status: "Verification Pending",
+    status: "Pending",
     termsAccepted: false,
   });
   const [files, setFiles] = useState([]);
@@ -703,15 +704,15 @@ function DataCapture() {
 
   // Fetch locations from API
   useEffect(() => {
-    const fetchLocations = async () => {
+    const fetchLocData = async () => {
       try {
-        const res = await apiService.getLocations();
-        setLocations(res.data || []);
+        const locRes = await apiService.getLocations();
+        setLocations(locRes.data || []);
       } catch (err) {
         console.error("Error fetching locations:", err);
       }
     };
-    fetchLocations();
+    fetchLocData();
   }, []);
 
   // Load draft from localStorage on mount (only for new records and if auto-save is enabled)
@@ -818,9 +819,14 @@ function DataCapture() {
         nextOfKinRelationship: record.nextOfKinRelationship || "",
         nextOfKinContact: record.nextOfKinContact || "",
         nextOfKinIdPassport: record.nextOfKinIdPassport || "",
-        burialLocation: record.burialLocation || "Block A",
+        burialLocation: record.burialLocation || "",
+        burialTime: record.burialTime || "",
         primaryService: record.primaryService || "Burial",
-        amountPayableBurial: record.amountPaidBurial || "",
+        amountPaidBurial: record.amountPaidBurial || "",
+        secondaryService: record.secondaryService || "None",
+        amountPaidSecondary: record.amountPaidSecondary || 0,
+        tertiaryService: record.tertiaryService || "None",
+        amountPaidTertiary: record.amountPaidTertiary || 0,
         mpesaRefNo: record.mpesaRefNo || "",
         receiptNo: record.receiptNo || "",
         burialPermitNumber: record.burialPermitNumber || "",
@@ -829,10 +835,7 @@ function DataCapture() {
         burialPermitIssuedByContact: record.burialPermitIssuedByContact || "",
         burialPermitIssuedTo: record.burialPermitIssuedTo || "",
         burialPermitIssuedToContact: record.burialPermitIssuedToContact || "",
-        status:
-          record.status === "Pending"
-            ? "Verification Pending"
-            : record.status || "Verification Pending",
+        status: record.status || "Pending",
       });
 
       // Load existing attachments
@@ -916,6 +919,24 @@ function DataCapture() {
       newFormData.age = "1";
     }
 
+    // Auto-calculate burial amount when location or time changes
+    if (e.target.name === "burialLocation" || e.target.name === "burialTime") {
+      const locationName = e.target.name === "burialLocation" ? e.target.value : formData.burialLocation;
+      const burialTime = e.target.name === "burialTime" ? e.target.value : formData.burialTime;
+
+      if (locationName && burialTime) {
+        let amount = 0;
+
+        // Try to get from dynamic location data fetched from API
+        const loc = locations.find(l => (typeof l === 'string' ? l === locationName : l.name === locationName));
+        if (loc && typeof loc === 'object') {
+          amount = burialTime === "Daytime" ? (loc.daytimePrice || 0) : (loc.nighttimePrice || 0);
+        }
+
+        newFormData.amountPaidBurial = amount.toString();
+      }
+    }
+
     setFormData(newFormData);
 
     // Validate age when age category changes
@@ -982,6 +1003,22 @@ function DataCapture() {
         error(ageValidation.message);
         return;
       }
+    }
+
+    // Validate burial location and time are selected
+    if (!formData.burialLocation) {
+      error("Please select a burial location");
+      return;
+    }
+
+    if (!formData.burialTime) {
+      error("Please select the time of burial");
+      return;
+    }
+
+    if (!formData.amountPaidBurial) {
+      error("Amount paid for burial is required");
+      return;
     }
 
     // Validate attachments are required for non-Stillborn/Infant cases
@@ -1052,24 +1089,16 @@ function DataCapture() {
         }
       });
 
-      // Map applicantPhone to applicantMobile for backend consistency
-      if (formData.applicantPhone) {
-        recordData.applicantMobile = formData.applicantPhone;
-      }
-
-      // Map applicantIdPassportNo to applicantIdPassport for backend consistency
-      if (formData.applicantIdPassportNo) {
-        recordData.applicantIdPassport = formData.applicantIdPassportNo;
-        delete recordData.applicantIdPassportNo;
-      }
-
-      // Rename amountPayableBurial to amountPaidBurial for backend
-      if (formData.amountPayableBurial) {
-        recordData.amountPaidBurial = formData.amountPayableBurial;
-      }
+      // Map applicantPhone to applicantMobile for backend consistency if needed, 
+      // but we updated models to use semantic names where possible.
+      // Keeping applicantPhone mapping for now if backend expects applicantMobile.
+      // Wait, let's check backend PublicRecord again. 
+      // It has applicantPhone. So no need to map to applicantMobile!
+      
+      recordData.applicantPhone = formData.applicantPhone;
 
       // Remove termsAccepted before sending to backend
-      const { termsAccepted, ...dataToSubmit } = recordData;
+      const { termsAccepted: _terms, ...dataToSubmit } = recordData;
 
       if (editId) {
         // Update existing record (requires auth)
@@ -1124,8 +1153,13 @@ function DataCapture() {
           nextOfKinContact: "",
           nextOfKinIdPassport: "",
           burialLocation: "",
+          burialTime: "",
           primaryService: "Burial",
-          amountPayableBurial: "",
+          amountPaidBurial: "",
+          secondaryService: "None",
+          amountPaidSecondary: 0,
+          tertiaryService: "None",
+          amountPaidTertiary: 0,
           mpesaRefNo: "",
           receiptNo: "",
           burialPermitNumber: "",
@@ -1186,8 +1220,13 @@ function DataCapture() {
           nextOfKinContact: "",
           nextOfKinIdPassport: "",
           burialLocation: "",
+          burialTime: "",
           primaryService: "Burial",
-          amountPayableBurial: "",
+          amountPaidBurial: "",
+          secondaryService: "None",
+          amountPaidSecondary: 0,
+          tertiaryService: "None",
+          amountPaidTertiary: 0,
           mpesaRefNo: "",
           receiptNo: newReceiptNo,
           burialPermitNumber: "",
@@ -1224,8 +1263,13 @@ function DataCapture() {
           nextOfKinContact: "",
           nextOfKinIdPassport: "",
           burialLocation: "",
+          burialTime: "",
           primaryService: "Burial",
-          amountPayableBurial: "",
+          amountPaidBurial: "",
+          secondaryService: "None",
+          amountPaidSecondary: 0,
+          tertiaryService: "None",
+          amountPaidTertiary: 0,
           mpesaRefNo: "",
           receiptNo: newReceiptNo,
           burialPermitNumber: "",
@@ -1634,23 +1678,40 @@ function DataCapture() {
           <FormGrid>
             <FormGroup>
               <label>Location of Burial *</label>
+                    <select
+                      name="burialLocation"
+                      value={formData.burialLocation}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Location</option>
+                      {locations.map((loc, idx) => {
+                        const name = typeof loc === 'string' ? loc : loc.name;
+                        const id = typeof loc === 'string' ? `loc-${idx}` : (loc._id || loc.id);
+                        return (
+                          <option key={id} value={name}>
+                            {name}
+                          </option>
+                        );
+                      })}
+                    </select>
+            </FormGroup>
+            <FormGroup>
+              <label>Time of Burial *</label>
               <select
-                name="burialLocation"
-                value={formData.burialLocation}
+                name="burialTime"
+                value={formData.burialTime}
                 onChange={handleChange}
                 required
               >
-                <option value="">Select Location</option>
-                <option value="Block A">Block A</option>
-                <option value="Main">Main</option>
-                <option value="Block B">Block B</option>
-                <option value="Lan'gata">Lan'gata</option>
-                {locations.map((loc) => (
-                  <option key={loc._id} value={loc.name}>
-                    {loc.name}
-                  </option>
-                ))}
+                <option value="">Select Time</option>
+                <option value="Daytime">Daytime</option>
+                <option value="Nighttime">Nighttime</option>
               </select>
+              <HelperText>
+                <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
+                Select daytime or nighttime burial
+              </HelperText>
             </FormGroup>
             <FormGroup>
               <label>Primary Service *</label>
@@ -1665,16 +1726,26 @@ function DataCapture() {
               </select>
             </FormGroup>
             <FormGroup>
-              <label>Amount Payable for Burial *</label>
+              <label>Amount Paid for Burial *</label>
               <input
                 type="number"
-                name="amountPayableBurial"
-                value={formData.amountPayableBurial}
-                onChange={handleChange}
-                placeholder="Enter amount"
+                name="amountPaidBurial"
+                value={formData.amountPaidBurial}
+                readOnly
+                placeholder="Auto-calculated"
                 min="0"
                 required
+                style={{
+                  backgroundColor: "#f3f4f6",
+                  cursor: "not-allowed",
+                  color: "#374151",
+                  fontWeight: "600",
+                }}
               />
+              <HelperText>
+                <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
+                Automatically calculated based on location and time of burial
+              </HelperText>
             </FormGroup>
             {/* 
             <FormGroup>
