@@ -137,7 +137,7 @@ function Home() {
   return (
     <HomeContainer>
       <HeroSection>
-        <HeroTitle>Burial Record Management</HeroTitle>
+        <HeroTitle>Burial Application</HeroTitle>
         <HeroSubtitle>
           Register and manage burial records efficiently. Submit your information to create a new burial record.
         </HeroSubtitle>

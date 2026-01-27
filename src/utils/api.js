@@ -26,6 +26,21 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle unauthorized responses
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      // Redirect to home or login if session expires
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const API_ENDPOINTS = {
   RECORDS: {
     LIST: '/records',
