@@ -693,7 +693,7 @@ function DataCapture() {
     burialPermitIssuedByContact: "",
     burialPermitIssuedTo: "",
     burialPermitIssuedToContact: "",
-    status: "Pending",
+    status: "Verification Pending",
     termsAccepted: false,
   });
   const [files, setFiles] = useState([]);
@@ -715,6 +715,42 @@ function DataCapture() {
     fetchLocData();
   }, []);
 
+  // Fetch latest applicant ID and receipt number, then generate new ones
+  const fetchAndGenerateIds = async () => {
+    try {
+      const [appIdRes, receiptNoRes] = await Promise.all([
+        apiService.getLatestApplicantId(),
+        apiService.getLatestReceiptNo(),
+      ]);
+
+      console.log("API Response:", appIdRes.data);
+      const latestId = appIdRes.data?.data?.applicantId || appIdRes.data?.applicantId || appIdRes.data?.latestApplicantId || null;
+      const latestReceiptNo = receiptNoRes.data?.data?.receiptNo || receiptNoRes.data?.receiptNo || receiptNoRes.data?.latestReceiptNo || null;
+
+      console.log("Extracted latestId:", latestId);
+      const newApplicantId = generateNextApplicantId(latestId);
+      const newReceiptNo = generateNextReceiptNo(latestReceiptNo);
+
+      console.log("Setting form with newApplicantId:", newApplicantId);
+      setFormData((prev) => ({
+        ...prev,
+        applicantId: newApplicantId,
+        receiptNo: newReceiptNo,
+      }));
+    } catch (err) {
+      console.error("Error fetching latest IDs:", err);
+      // Fallback: generate IDs starting from 0001
+      const newApplicantId = generateNextApplicantId(null);
+      const newReceiptNo = generateNextReceiptNo(null);
+
+      setFormData((prev) => ({
+        ...prev,
+        applicantId: newApplicantId,
+        receiptNo: newReceiptNo,
+      }));
+    }
+  };
+
   // Load draft from localStorage on mount (only for new records and if auto-save is enabled)
   useEffect(() => {
     if (!editId) {
@@ -728,43 +764,7 @@ function DataCapture() {
         burialPermitDate: getTodayDate(),
       }));
 
-      // Fetch latest applicant ID and receipt number, then generate new ones
-      const fetchAndGenerateId = async () => {
-        try {
-          const [appIdRes, receiptNoRes] = await Promise.all([
-            apiService.getLatestApplicantId(),
-            apiService.getLatestReceiptNo(),
-          ]);
-
-          console.log("API Response:", appIdRes.data);
-          const latestId = appIdRes.data?.data?.applicantId || appIdRes.data?.applicantId || appIdRes.data?.latestApplicantId || null;
-          const latestReceiptNo = receiptNoRes.data?.data?.receiptNo || receiptNoRes.data?.receiptNo || receiptNoRes.data?.latestReceiptNo || null;
-
-          console.log("Extracted latestId:", latestId);
-          const newApplicantId = generateNextApplicantId(latestId);
-          const newReceiptNo = generateNextReceiptNo(latestReceiptNo);
-
-          console.log("Setting form with newApplicantId:", newApplicantId);
-          setFormData((prev) => ({
-            ...prev,
-            applicantId: newApplicantId,
-            receiptNo: newReceiptNo,
-          }));
-        } catch (err) {
-          console.error("Error fetching latest IDs:", err);
-          // Fallback: generate IDs starting from 0001
-          const newApplicantId = generateNextApplicantId(null);
-          const newReceiptNo = generateNextReceiptNo(null);
-
-          setFormData((prev) => ({
-            ...prev,
-            applicantId: newApplicantId,
-            receiptNo: newReceiptNo,
-          }));
-        }
-      };
-
-      fetchAndGenerateId();
+      fetchAndGenerateIds();
     } else {
       fetchRecordData(editId);
     }
@@ -835,7 +835,7 @@ function DataCapture() {
         burialPermitIssuedByContact: record.burialPermitIssuedByContact || "",
         burialPermitIssuedTo: record.burialPermitIssuedTo || "",
         burialPermitIssuedToContact: record.burialPermitIssuedToContact || "",
-        status: record.status || "Pending",
+        status: record.status === "Pending" ? "Verification Pending" : (record.status || "Verification Pending"),
       });
 
       // Load existing attachments
@@ -914,9 +914,13 @@ function DataCapture() {
   const handleChange = (e) => {
     const newFormData = { ...formData, [e.target.name]: e.target.value };
 
-    // Auto-set age to 1 for Infant category
-    if (e.target.name === "ageCategory" && e.target.value === "Infant") {
-      newFormData.age = "1";
+    // Auto-set age for specific categories
+    if (e.target.name === "ageCategory") {
+      if (e.target.value === "Infant") {
+        newFormData.age = "1";
+      } else if (e.target.value === "Stillborn") {
+        newFormData.age = "0";
+      }
     }
 
     // Auto-calculate burial amount when location or time changes
@@ -940,8 +944,8 @@ function DataCapture() {
     setFormData(newFormData);
 
     // Validate age when age category changes
-    if (e.target.name === "ageCategory" && formData.age) {
-      const ageValidation = validateAge(formData.age, e.target.value);
+    if (e.target.name === "ageCategory" && newFormData.age) {
+      const ageValidation = validateAge(newFormData.age, e.target.value);
       if (!ageValidation.valid) {
         error(ageValidation.message);
       }
@@ -996,12 +1000,61 @@ function DataCapture() {
       }
     }
 
+    // Validate required fields for deceased
+    if (!formData.age && formData.age !== 0) {
+      error("Age is required");
+      return;
+    }
+    if (!formData.gender) {
+      error("Gender is required");
+      return;
+    }
+    if (!formData.nationality) {
+      error("Nationality is required");
+      return;
+    }
+
     // Validate age based on age category
-    if (formData.ageCategory && formData.age) {
-      const ageValidation = validateAge(formData.age, formData.ageCategory);
-      if (!ageValidation.valid) {
-        error(ageValidation.message);
+    // Validate age based on age category
+    if (formData.ageCategory && formData.age !== "") {
+      const age = parseInt(formData.age, 10);
+
+      if (isNaN(age) || age < 0) {
+        error("Age must be a valid positive number");
         return;
+      }
+
+      switch (formData.ageCategory) {
+        case "Stillborn":
+          // Stillborn typically has age 0 or no age
+          if (age > 0) {
+            error("Stillborn age should be 0");
+            return;
+          }
+          break;
+        case "Infant":
+          // Infant: 0-1 years (inclusive)
+          if (age > 1) {
+            error("Infant age must be between 0 and 1 year");
+            return;
+          }
+          break;
+        case "Child":
+          // Child: 1-12 years (inclusive)
+          if (age < 1 || age > 12) {
+            error("Child age must be between 1 and 12 years");
+            return;
+          }
+          break;
+        case "Adult":
+          // Adult: Above 12 years (13+)
+          if (age <= 12) {
+            error("Adult age must be above 12 years");
+            return;
+          }
+          break;
+        default:
+          break;
       }
     }
 
@@ -1017,7 +1070,7 @@ function DataCapture() {
     }
 
     if (!formData.amountPaidBurial) {
-      error("Amount paid for burial is required");
+      error("Amount Payable for Burial is required");
       return;
     }
 
@@ -1094,7 +1147,7 @@ function DataCapture() {
       // Keeping applicantPhone mapping for now if backend expects applicantMobile.
       // Wait, let's check backend PublicRecord again. 
       // It has applicantPhone. So no need to map to applicantMobile!
-      
+
       recordData.applicantPhone = formData.applicantPhone;
 
       // Remove termsAccepted before sending to backend
@@ -1172,6 +1225,8 @@ function DataCapture() {
         });
         setFiles([]);
         setAutoSaveStatus("");
+        // After successful submission, refresh IDs
+        fetchAndGenerateIds();
       }
     } catch (err) {
       console.error("❌ Error in handleSubmit:", err);
@@ -1321,8 +1376,9 @@ function DataCapture() {
                 style={{
                   backgroundColor: "#f3f4f6",
                   cursor: "not-allowed",
-                  color: "#374151",
-                  fontWeight: "600",
+                  color: theme.colors.primarySolid,
+                  fontWeight: "700",
+                  fontSize: "16px",
                 }}
               />
               <HelperText>
@@ -1464,20 +1520,13 @@ function DataCapture() {
             </FormGroup>
             <FormGroup>
               <label>
-                Gender{" "}
-                {formData.ageCategory !== "Stillborn" &&
-                  formData.ageCategory !== "Infant"
-                  ? "*"
-                  : ""}
+                Gender *
               </label>
               <select
                 name="gender"
                 value={formData.gender}
                 onChange={handleChange}
-                required={
-                  formData.ageCategory !== "Stillborn" &&
-                  formData.ageCategory !== "Infant"
-                }
+                required
               >
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
@@ -1502,11 +1551,7 @@ function DataCapture() {
             </FormGroup>
             <FormGroup>
               <label>
-                Age{" "}
-                {formData.ageCategory !== "Stillborn" &&
-                  formData.ageCategory !== "Infant"
-                  ? "*"
-                  : ""}
+                Age *
               </label>
               <input
                 type="number"
@@ -1556,10 +1601,7 @@ function DataCapture() {
                         : undefined
                 }
                 disabled={formData.ageCategory === "Stillborn"}
-                required={
-                  formData.ageCategory !== "Stillborn" &&
-                  formData.ageCategory !== "Infant"
-                }
+                required
               />
               {formData.ageCategory && (
                 <HelperText>
@@ -1678,23 +1720,23 @@ function DataCapture() {
           <FormGrid>
             <FormGroup>
               <label>Location of Burial *</label>
-                    <select
-                      name="burialLocation"
-                      value={formData.burialLocation}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="">Select Location</option>
-                      {locations.map((loc, idx) => {
-                        const name = typeof loc === 'string' ? loc : loc.name;
-                        const id = typeof loc === 'string' ? `loc-${idx}` : (loc._id || loc.id);
-                        return (
-                          <option key={id} value={name}>
-                            {name}
-                          </option>
-                        );
-                      })}
-                    </select>
+              <select
+                name="burialLocation"
+                value={formData.burialLocation}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Location</option>
+                {locations.map((loc, idx) => {
+                  const name = typeof loc === 'string' ? loc : loc.name;
+                  const id = typeof loc === 'string' ? `loc-${idx}` : (loc._id || loc.id);
+                  return (
+                    <option key={id} value={name}>
+                      {name}
+                    </option>
+                  );
+                })}
+              </select>
             </FormGroup>
             <FormGroup>
               <label>Time of Burial *</label>
@@ -1726,7 +1768,7 @@ function DataCapture() {
               </select>
             </FormGroup>
             <FormGroup>
-              <label>Amount Paid for Burial *</label>
+              <label>Amount Payable for Burial *</label>
               <input
                 type="number"
                 name="amountPaidBurial"
@@ -2051,8 +2093,9 @@ function DataCapture() {
                 style={{
                   backgroundColor: "#f3f4f6",
                   cursor: "not-allowed",
-                  color: "#374151",
-                  fontWeight: "600",
+                  color: theme.colors.primarySolid,
+                  fontWeight: "700",
+                  fontSize: "16px",
                 }}
               />
               <HelperText>
@@ -2231,7 +2274,7 @@ function DataCapture() {
               }
             />
             <label htmlFor="termsAccepted">
-              <strong>Declaration:</strong> I hereby declare that the information provided in this burial record application is true and accurate to the best of my knowledge. I understand that providing false information may lead to legal action and the cancellation of this record. I agree to the <strong>Terms and Conditions</strong> of the ISMA Burial Record Management System.
+              <strong>Declaration:</strong> I hereby declare that the information provided in this burial record application is true and accurate to the best of my knowledge. I understand that providing false information may lead to legal action and the cancellation of this record. I agree to the <strong>Terms and Conditions</strong> of the <strong>Islamia School & Mosque Association</strong> Burial Application.
             </label>
           </TermsSection>
 

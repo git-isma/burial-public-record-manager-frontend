@@ -67,35 +67,43 @@ const SidebarHeader = styled.div`
   }
 
   img {
-    width: 64px;
-    height: 64px;
+    width: 100px;
+    height: 100px;
     object-fit: contain;
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+    background: white;
+    border-radius: 12px;
+    padding: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
 
   div {
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   h2 {
     font-size: 16px;
-    font-weight: 800;
+    font-weight: 900;
     margin: 0;
-    color: ${theme.colors.primarySolid};
-    letter-spacing: 0.5px;
+    color: #3D2F2F;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
+    font-family: 'Inter', system-ui, sans-serif;
 
     body.dark-theme & {
-      color: #a78bfa;
+      color: #7c3aed;
     }
   }
 
   p {
-    font-size: 10px;
-    color: ${theme.colors.gray500};
-    margin: 4px 0 0 0;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    margin: 0;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
   }
 
   @media (max-width: 767px) {
@@ -105,8 +113,8 @@ const SidebarHeader = styled.div`
     border-right: 1px solid ${theme.colors.gray200};
     
     img {
-      width: 32px;
-      height: 32px;
+      width: 48px;
+      height: 48px;
     }
 
     p { display: none; }
@@ -144,6 +152,8 @@ const StyledNavLink = styled(NavLink)`
   white-space: nowrap;
   border-radius: 0;
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
 
   body.dark-theme & {
     color: #b0b0b0;
@@ -152,11 +162,34 @@ const StyledNavLink = styled(NavLink)`
   @media (min-width: 768px) {
     border-radius: ${theme.borderRadius.md};
     margin-bottom: 4px;
+    white-space: normal;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: ${theme.colors.primarySolid};
+    transform: scaleY(0);
+    transition: transform ${theme.transitions.base};
+    border-radius: 0 4px 4px 0;
+
+    @media (max-width: 767px) {
+      width: 100%;
+      height: 3px;
+      top: auto;
+      bottom: 0;
+      border-radius: 4px 4px 0 0;
+    }
   }
 
   &:hover {
     background: ${theme.colors.gray100};
     color: ${theme.colors.primarySolid};
+    padding-left: 20px;
 
     body.dark-theme & {
       background: #2d2d2d;
@@ -165,12 +198,17 @@ const StyledNavLink = styled(NavLink)`
   }
 
   &.active {
-    background: #f0f4ff;
+    background: linear-gradient(90deg, rgba(61, 47, 47, 0.1) 0%, transparent 100%);
     color: ${theme.colors.primarySolid};
+    font-weight: 600;
 
     body.dark-theme & {
-      background: #3d2d5d;
+      background: linear-gradient(90deg, rgba(167, 139, 250, 0.2) 0%, transparent 100%);
       color: #a78bfa;
+    }
+
+    &::before {
+      transform: scaleY(1);
     }
   }
 
@@ -200,10 +238,10 @@ function Layout() {
     <LayoutContainer>
       <Sidebar>
         <SidebarHeader>
-          <img src={ismaLogo} alt="ISMA Logo" />
+          <img src={ismaLogo} alt="Islamia School & Mosque Association Logo" />
           <div>
-            <h2>Burial Records</h2>
-            <p>ISMA LIVE SYSTEM</p>
+            <h2>Islamia School & Mosque Association</h2>
+            <p>BURIAL APPLICATION</p>
           </div>
         </SidebarHeader>
         <NavLinksContainer>

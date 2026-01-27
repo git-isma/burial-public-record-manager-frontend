@@ -409,7 +409,7 @@ function Records() {
 
       const currentFilters = overrides.filters || filters;
       const currentPage = overrides.page || pagination.currentPage;
-      
+
       const payload = {
         page: currentPage,
         limit: 12,
@@ -528,169 +528,169 @@ function Records() {
             </div>
           </PageHeader>
 
-      {(records.length > 0 || filters.status || filters.deceasedName) && (
-      <FilterSection>
-        <h3>Filter Records</h3>
-        <FiltersGrid>
+          {(records.length > 0 || filters.status || filters.deceasedName) && (
+            <FilterSection>
+              <h3>Filter Records</h3>
+              <FiltersGrid>
 
-          <FormGroup>
-            <label>Search by Deceased Name</label>
-            <input
-              type="text"
-              name="deceasedName"
-              placeholder="Enter Deceased Name"
-              value={filters.deceasedName}
-              onChange={handleFilterChange}
-            />
-          </FormGroup>
-          <FormGroup>
-            <label>Status</label>
-            <select name="status" value={filters.status} onChange={handleFilterChange}>
-              <option value="">All Status</option>
-              <option value="Pending">Pending Verification</option>
-              <option value="Verified">Verified</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-          </FormGroup>
-        </FiltersGrid>
-        <FilterButtons>
-          <Button $variant="primary" onClick={applyFilters}>
-            Apply Filters
-          </Button>
-          <Button $variant="secondary" onClick={resetFilters}>
-            Reset
-          </Button>
-        </FilterButtons>
-      </FilterSection>
-      )}
-
-      {loading ? (
-        <TableSkeleton rows={6} />
-      ) : records.length === 0 ? (
-        <EmptyState
-          icon={<MdDescription size={48} />}
-          title="No Records Found"
-          description={
-            filters.status || filters.deceasedName
-              ? "No public records match your current filters. Try adjusting your search criteria."
-              : "No records found for this email. You can submit a new burial record application."
-          }
-          action={
-            filters.status || filters.deceasedName
-              ? resetFilters
-              : () => navigate('/data-capture')
-          }
-          actionText={
-            filters.status || filters.deceasedName
-              ? "Clear Filters"
-              : "Create New Record"
-          }
-        />
-      ) : (
-        <>
-          <RecordsGrid>
-            {records.map(record => (
-              <RecordCard key={record._id}>
-                <CardHeader>
-                  <div>
-                    <RecordNumber>{record.recordNumber}</RecordNumber>
-                  </div>
-                  <StatusBadge $status={record.status}>
-                    {(record.status === 'Pending' || !record.status) ? 'Pending Verification' : record.status}
-                  </StatusBadge>
-                </CardHeader>
-
-                <CardBody>
-                  <InfoRow>
-                    <MdPerson className="icon" size={18} />
-                    <div className="label">Name</div>
-                    <div className="value">
-                      {`${record.firstName || ''} ${record.lastName || ''}`.trim() || 'N/A'}
-                    </div>
-                  </InfoRow>
-
-                  <InfoRow>
-                    <MdCalendarToday className="icon" size={18} />
-                    <div className="label">Date of Death</div>
-                    <div className="value">{formatDate(record.dateOfDeath)}</div>
-                  </InfoRow>
-
-                  <InfoRow>
-                    <MdCalendarToday className="icon" size={18} />
-                    <div className="label">Date of Burial</div>
-                    <div className="value">{formatDate(record.dateOfBurial)}</div>
-                  </InfoRow>
-
-                  <InfoRow>
-                    <MdLocationOn className="icon" size={18} />
-                    <div className="label">Location</div>
-                    <div className="value">{record.burialLocation || 'N/A'}</div>
-                  </InfoRow>
-
-                  <InfoRow>
-                    <MdCheckCircle className="icon" size={18} />
-                    <div className="label">Submitted</div>
-                    <div className="value">{formatDate(record.createdAt)}</div>
-                  </InfoRow>
-
-                  {record.status === 'Rejected' && record.rejectionReason && (
-                    <RejectionInfo>
-                      <MdErrorOutline className="icon" size={16} />
-                      <div>
-                        <strong>Rejected Reason : </strong>
-                        {record.rejectionReason}
-                      </div>
-                    </RejectionInfo>
-                  )}
-                </CardBody>
-
-                <CardFooter>
-                  <DownloadButton
-                    $variant="primary"
-                    onClick={() => handleDownloadAcknowledgement(record)}
-                  >
-                    <MdDownload size={18} />
-                    Download Acknowledgement
-                  </DownloadButton>
-                </CardFooter>
-              </RecordCard>
-            ))}
-          </RecordsGrid>
-
-          {records.length > 0 && pagination.totalPages > 1 && (
-            <Pagination>
-              <button
-                onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage - 1 })}
-                disabled={pagination.currentPage === 1}
-              >
-                « Previous
-              </button>
-              <button className="active">{pagination.currentPage}</button>
-              {pagination.currentPage < pagination.totalPages - 1 && <span>...</span>}
-              {pagination.currentPage < pagination.totalPages && (
-                <button
-                  onClick={() => setPagination({ ...pagination, currentPage: pagination.totalPages })}
-                >
-                  {pagination.totalPages}
-                </button>
-              )}
-              <button
-                onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage + 1 })}
-                disabled={pagination.currentPage === pagination.totalPages}
-              >
-                Next »
-              </button>
-            </Pagination>
+                <FormGroup>
+                  <label>Search by Deceased Name</label>
+                  <input
+                    type="text"
+                    name="deceasedName"
+                    placeholder="Enter Deceased Name"
+                    value={filters.deceasedName}
+                    onChange={handleFilterChange}
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <label>Status</label>
+                  <select name="status" value={filters.status} onChange={handleFilterChange}>
+                    <option value="">All Status</option>
+                    <option value="Pending">Verification Pending</option>
+                    <option value="Verified">Verified</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                </FormGroup>
+              </FiltersGrid>
+              <FilterButtons>
+                <Button $variant="primary" onClick={applyFilters}>
+                  Apply Filters
+                </Button>
+                <Button $variant="secondary" onClick={resetFilters}>
+                  Reset
+                </Button>
+              </FilterButtons>
+            </FilterSection>
           )}
-        </>
-      )}
+
+          {loading ? (
+            <TableSkeleton rows={6} />
+          ) : records.length === 0 ? (
+            <EmptyState
+              icon={<MdDescription size={48} />}
+              title="No Records Found"
+              description={
+                filters.status || filters.deceasedName
+                  ? "No public records match your current filters. Try adjusting your search criteria."
+                  : "No records found for this email. You can submit a new burial record application."
+              }
+              action={
+                filters.status || filters.deceasedName
+                  ? resetFilters
+                  : () => navigate('/data-capture')
+              }
+              actionText={
+                filters.status || filters.deceasedName
+                  ? "Clear Filters"
+                  : "Create New Record"
+              }
+            />
+          ) : (
+            <>
+              <RecordsGrid>
+                {records.map(record => (
+                  <RecordCard key={record._id}>
+                    <CardHeader>
+                      <div>
+                        <RecordNumber>{record.recordNumber}</RecordNumber>
+                      </div>
+                      <StatusBadge $status={record.status}>
+                        {(record.status === 'Pending' || !record.status) ? 'Verification Pending' : record.status}
+                      </StatusBadge>
+                    </CardHeader>
+
+                    <CardBody>
+                      <InfoRow>
+                        <MdPerson className="icon" size={18} />
+                        <div className="label">Name</div>
+                        <div className="value">
+                          {`${record.firstName || ''} ${record.lastName || ''}`.trim() || 'N/A'}
+                        </div>
+                      </InfoRow>
+
+                      <InfoRow>
+                        <MdCalendarToday className="icon" size={18} />
+                        <div className="label">Date of Death</div>
+                        <div className="value">{formatDate(record.dateOfDeath)}</div>
+                      </InfoRow>
+
+                      <InfoRow>
+                        <MdCalendarToday className="icon" size={18} />
+                        <div className="label">Date of Burial</div>
+                        <div className="value">{formatDate(record.dateOfBurial)}</div>
+                      </InfoRow>
+
+                      <InfoRow>
+                        <MdLocationOn className="icon" size={18} />
+                        <div className="label">Location</div>
+                        <div className="value">{record.burialLocation || 'N/A'}</div>
+                      </InfoRow>
+
+                      <InfoRow>
+                        <MdCheckCircle className="icon" size={18} />
+                        <div className="label">Submitted</div>
+                        <div className="value">{formatDate(record.createdAt)}</div>
+                      </InfoRow>
+
+                      {record.status === 'Rejected' && record.rejectionReason && (
+                        <RejectionInfo>
+                          <MdErrorOutline className="icon" size={16} />
+                          <div>
+                            <strong>Rejected Reason : </strong>
+                            {record.rejectionReason}
+                          </div>
+                        </RejectionInfo>
+                      )}
+                    </CardBody>
+
+                    <CardFooter>
+                      <DownloadButton
+                        $variant="primary"
+                        onClick={() => handleDownloadAcknowledgement(record)}
+                      >
+                        <MdDownload size={18} />
+                        Download Acknowledgement
+                      </DownloadButton>
+                    </CardFooter>
+                  </RecordCard>
+                ))}
+              </RecordsGrid>
+
+              {records.length > 0 && pagination.totalPages > 1 && (
+                <Pagination>
+                  <button
+                    onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage - 1 })}
+                    disabled={pagination.currentPage === 1}
+                  >
+                    « Previous
+                  </button>
+                  <button className="active">{pagination.currentPage}</button>
+                  {pagination.currentPage < pagination.totalPages - 1 && <span>...</span>}
+                  {pagination.currentPage < pagination.totalPages && (
+                    <button
+                      onClick={() => setPagination({ ...pagination, currentPage: pagination.totalPages })}
+                    >
+                      {pagination.totalPages}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage + 1 })}
+                    disabled={pagination.currentPage === pagination.totalPages}
+                  >
+                    Next »
+                  </button>
+                </Pagination>
+              )}
+            </>
+          )}
 
 
         </>
       )}
 
       <div style={{ textAlign: 'center', padding: '24px', color: theme.colors.gray500, fontSize: '12px' }}>
-        © 2025 Burial Record Manager. All rights reserved.
+        © 2025 Burial Live Application. All rights reserved.
       </div>
     </RecordsContainer>
   );

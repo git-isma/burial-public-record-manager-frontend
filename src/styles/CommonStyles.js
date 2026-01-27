@@ -262,6 +262,16 @@ export const FormGroup = styled.div`
         color: #6d6d6d;
       }
     }
+
+    /* Hide spin button for input type number */
+    &[type=number]::-webkit-inner-spin-button, 
+    &[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    &[type=number] {
+      -moz-appearance: textfield;
+    }
   }
 
   select {
