@@ -1149,6 +1149,7 @@ function DataCapture() {
       // It has applicantPhone. So no need to map to applicantMobile!
 
       recordData.applicantPhone = formData.applicantPhone;
+      recordData.attachments = [...existingAttachments, ...attachments]; // Ensure all attachments are included
 
       // Remove termsAccepted before sending to backend
       const { termsAccepted: _terms, ...dataToSubmit } = recordData;
