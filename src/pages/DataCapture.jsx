@@ -715,6 +715,34 @@ function DataCapture() {
     fetchLocData();
   }, []);
 
+  const refreshApplicantId = async () => {
+    try {
+      const res = await apiService.getLatestApplicantId();
+      const latestId = res.data?.data?.applicantId || res.data?.applicantId || res.data?.latestApplicantId || null;
+      const newId = generateNextApplicantId(latestId);
+      setFormData((prev) => ({ ...prev, applicantId: newId }));
+      success("Applicant ID refreshed");
+    } catch (err) {
+      console.error("Error refreshing Applicant ID:", err);
+      const newId = generateNextApplicantId(null);
+      setFormData((prev) => ({ ...prev, applicantId: newId }));
+    }
+  };
+
+  const refreshReceiptNo = async () => {
+    try {
+      const res = await apiService.getLatestReceiptNo();
+      const latestNo = res.data?.data?.receiptNo || res.data?.receiptNo || res.data?.latestReceiptNo || null;
+      const newNo = generateNextReceiptNo(latestNo);
+      setFormData((prev) => ({ ...prev, receiptNo: newNo }));
+      success("Receipt Number refreshed");
+    } catch (err) {
+      console.error("Error refreshing Receipt No:", err);
+      const newNo = generateNextReceiptNo(null);
+      setFormData((prev) => ({ ...prev, receiptNo: newNo }));
+    }
+  };
+
   // Fetch latest applicant ID and receipt number, then generate new ones
   const fetchAndGenerateIds = async () => {
     try {
@@ -1047,7 +1075,7 @@ function DataCapture() {
           }
           break;
         case "Adult":
-          // Adult: Above 12 years (13+)
+          // Adult: Above 12 years (12+)
           if (age <= 12) {
             error("Adult age must be above 12 years");
             return;
@@ -1074,19 +1102,22 @@ function DataCapture() {
       return;
     }
 
-    // Validate attachments are required for non-Stillborn/Infant cases
-    const isExempt =
-      formData.ageCategory === "Stillborn" || formData.ageCategory === "Infant";
-    if (
-      !isExempt &&
-      !editId &&
-      files.length === 0 &&
-      existingAttachments.length === 0
-    ) {
-      error(
-        "Attachments are required for this age category. Please upload at least one document."
-      );
-      return;
+    // Validate attachments are required
+    const totalAttachments = files.length + existingAttachments.length;
+    
+    if (!editId) {
+        if (formData.ageCategory === "Stillborn" && totalAttachments < 1) {
+            error("Medical Certificate of Stillbirth is required for Stillborn category. Please upload it.");
+            return;
+        }
+        if (formData.ageCategory === "Infant" && totalAttachments < 1) {
+            error("Birth Certificate is required for Infant category. Please upload it.");
+            return;
+        }
+        if (["Adult", "Child"].includes(formData.ageCategory) && totalAttachments < 1) {
+             error("Attachments are required for this age category. Please upload at least one document.");
+             return;
+        }
     }
 
     setLoading(true);
@@ -1369,19 +1400,36 @@ function DataCapture() {
           <FormGrid>
             <FormGroup>
               <label>Applicant ID</label>
-              <input
-                type="text"
-                value={formData.applicantId}
-                readOnly
-                placeholder="Auto-generated"
-                style={{
-                  backgroundColor: "#f3f4f6",
-                  cursor: "not-allowed",
-                  color: theme.colors.primarySolid,
-                  fontWeight: "700",
-                  fontSize: "16px",
-                }}
-              />
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <input
+                  type="text"
+                  value={formData.applicantId}
+                  readOnly
+                  placeholder="Auto-generated"
+                  style={{
+                    backgroundColor: "#f3f4f6",
+                    cursor: "not-allowed",
+                    color: theme.colors.primarySolid,
+                    fontWeight: "700",
+                    fontSize: "16px",
+                    flex: 1,
+                  }}
+                />
+                <Button
+                  type="button"
+                  onClick={refreshApplicantId}
+                  style={{
+                    padding: "10px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    whiteSpace: "nowrap",
+                  }}
+                  title="Refresh Applicant ID"
+                >
+                  <MdRefresh size={18} />
+                </Button>
+              </div>
               <HelperText>
                 <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
                 Auto-generated unique identifier
@@ -2086,19 +2134,36 @@ function DataCapture() {
             </FormGroup>
             <FormGroup>
               <label>Receipt No.</label>
-              <input
-                type="text"
-                value={formData.receiptNo}
-                readOnly
-                placeholder="Auto-generated"
-                style={{
-                  backgroundColor: "#f3f4f6",
-                  cursor: "not-allowed",
-                  color: theme.colors.primarySolid,
-                  fontWeight: "700",
-                  fontSize: "16px",
-                }}
-              />
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <input
+                  type="text"
+                  value={formData.receiptNo}
+                  readOnly
+                  placeholder="Auto-generated"
+                  style={{
+                    backgroundColor: "#f3f4f6",
+                    cursor: "not-allowed",
+                    color: theme.colors.primarySolid,
+                    fontWeight: "700",
+                    fontSize: "16px",
+                    flex: 1,
+                  }}
+                />
+                <Button
+                  type="button"
+                  onClick={refreshReceiptNo}
+                  style={{
+                    padding: "10px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    whiteSpace: "nowrap",
+                  }}
+                  title="Refresh Receipt No"
+                >
+                  <MdRefresh size={18} />
+                </Button>
+              </div>
               <HelperText>
                 <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
                 Auto-generated
@@ -2115,18 +2180,19 @@ function DataCapture() {
 
           {formData.ageCategory === "Stillborn" ||
             formData.ageCategory === "Infant" ? (
-            <ExemptionNote>
+            <AttachmentNote>
               <div className="icon">
-                <MdCheckCircleOutline size={20} />
+                <MdWarning size={20} />
               </div>
               <div className="content">
-                <h4>Exemption Notice</h4>
+                <h4>Required Documents *</h4>
                 <p>
-                  For Stillborn and Infant cases, no attachments are required.
-                  You can proceed without uploading any documents.
+                  {formData.ageCategory === "Stillborn"
+                    ? "Please upload the Medical Certificate of Stillbirth."
+                    : "Please upload the Birth Certificate."}
                 </p>
               </div>
-            </ExemptionNote>
+            </AttachmentNote>
           ) : (
             <AttachmentNote>
               <div className="icon">
