@@ -55,7 +55,7 @@ const Sidebar = styled.aside`
 `;
 
 const SidebarHeader = styled.div`
-  padding: 24px 20px;
+  padding: 24px 20px 0 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -84,13 +84,14 @@ const SidebarHeader = styled.div`
   }
 
   h2 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 900;
     margin: 0;
     color: #3D2F2F;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
     font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.3;
 
     body.dark-theme & {
       color: #7c3aed;
@@ -102,8 +103,9 @@ const SidebarHeader = styled.div`
     font-weight: 700;
     color: #64748b;
     margin: 0;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    line-height: 1.4;
   }
 
   @media (max-width: 767px) {
@@ -134,8 +136,48 @@ const NavLinksContainer = styled.nav`
     flex-direction: column;
     gap: 4px;
     padding: 16px 12px;
-    flex: 1;
+    flex: none;
     overflow-x: hidden;
+  }
+`;
+
+const SidebarFooter = styled.div`
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid ${theme.colors.gray100};
+
+  body.dark-theme & {
+    border-top-color: #333;
+  }
+`;
+
+const SidebarAddress = styled.div`
+  font-size: 11px;
+  color: ${theme.colors.gray500};
+  margin: 16px 0 0 0;
+  padding: 12px 0;
+  border-top: 1px solid ${theme.colors.gray100};
+  border-bottom: 1px solid ${theme.colors.gray100};
+  width: 100%;
+  text-align: center;
+  display: none;
+
+  @media (min-width: 768px) {
+    display: block;
+  }
+
+  body.dark-theme & {
+    color: #a0a0a0;
+    border-top-color: #333;
+    border-bottom-color: #333;
+  }
+
+  p {
+    margin: 3px 0;
+    line-height: 1.4;
+    text-transform: none;
+    font-weight: 500;
+    letter-spacing: normal;
   }
 `;
 
@@ -238,11 +280,20 @@ function Layout() {
     <LayoutContainer>
       <Sidebar>
         <SidebarHeader>
+          <div>
+            <p>BURIAL APPLICATION</p>
+          </div>
           <img src={ismaLogo} alt="Islamia School & Mosque Association Logo" />
           <div>
             <h2>Islamia School & Mosque Association</h2>
-            <p>BURIAL APPLICATION</p>
           </div>
+          <SidebarAddress>
+            <p>CUSTODIANS OF THE SUNNI MUSLIM</p>
+            <p>CEMETERIES - KARIOKOR & LANGATA</p>
+            <p>P.O. Box 21015 - 00500 NAIROBI</p>
+            <p>Cell / Whatsapp: +254 113217749</p>
+            <p>Email: office@isma.co.ke</p>
+          </SidebarAddress>
         </SidebarHeader>
         <NavLinksContainer>
           <StyledNavLink to="/" end>
@@ -254,6 +305,11 @@ function Layout() {
             <span>Records History</span>
           </StyledNavLink>
         </NavLinksContainer>
+        <SidebarFooter>
+          <div style={{ fontSize: '10px', color: '#94a3b8', textAlign: 'center' }}>
+            © {new Date().getFullYear()} ISMA Burial Application
+          </div>
+        </SidebarFooter>
       </Sidebar>
       <MainContent>
         <Outlet />
