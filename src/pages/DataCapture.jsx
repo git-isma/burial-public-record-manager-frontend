@@ -686,7 +686,7 @@ function DataCapture() {
     tertiaryService: "None",
     amountPayableTertiary: 0,
     mpesaRefNo: "",
-    receiptNo: "",
+    tempReceiptNo: "",
     burialPermitNumber: "",
     burialPermitDate: getTodayDate(),
     burialPermitIssuedBy: "",
@@ -719,7 +719,7 @@ function DataCapture() {
     try {
       const res = await apiService.getLatestApplicantId();
       const nextId = res.data?.applicantId || res.data?.data?.applicantId;
-      
+
       if (nextId) {
         setFormData((prev) => ({ ...prev, applicantId: nextId }));
       } else {
@@ -737,19 +737,19 @@ function DataCapture() {
   const refreshReceiptNo = async () => {
     try {
       const res = await apiService.getLatestReceiptNo();
-      const nextNo = res.data?.receiptNo || res.data?.data?.receiptNo || res.data?.data?.tempReceiptNo;
-      
+      const nextNo = res.data?.tempReceiptNo || res.data?.receiptNo || res.data?.data?.tempReceiptNo || res.data?.data?.receiptNo;
+
       if (nextNo) {
-        setFormData((prev) => ({ ...prev, receiptNo: nextNo }));
+        setFormData((prev) => ({ ...prev, tempReceiptNo: nextNo }));
       } else {
         const fallbackNo = generateNextReceiptNo(null);
-        setFormData((prev) => ({ ...prev, receiptNo: fallbackNo }));
+        setFormData((prev) => ({ ...prev, tempReceiptNo: fallbackNo }));
       }
       success("Receipt Number refreshed");
     } catch (err) {
       console.error("Error refreshing Receipt No:", err);
       const fallbackNo = generateNextReceiptNo(null);
-      setFormData((prev) => ({ ...prev, receiptNo: fallbackNo }));
+      setFormData((prev) => ({ ...prev, tempReceiptNo: fallbackNo }));
     }
   };
 
@@ -762,19 +762,19 @@ function DataCapture() {
       ]);
 
       const nextId = appIdRes.data?.applicantId || appIdRes.data?.data?.applicantId;
-      const nextReceiptNo = receiptNoRes.data?.receiptNo || receiptNoRes.data?.data?.receiptNo || receiptNoRes.data?.data?.tempReceiptNo;
+      const nextReceiptNo = receiptNoRes.data?.tempReceiptNo || receiptNoRes.data?.receiptNo || receiptNoRes.data?.data?.tempReceiptNo || receiptNoRes.data?.data?.receiptNo;
 
       setFormData((prev) => ({
         ...prev,
         applicantId: nextId || generateNextApplicantId(null),
-        receiptNo: nextReceiptNo || generateNextReceiptNo(null),
+        tempReceiptNo: nextReceiptNo || generateNextReceiptNo(null),
       }));
     } catch (err) {
       console.error("Error fetching latest IDs:", err);
       setFormData((prev) => ({
         ...prev,
         applicantId: generateNextApplicantId(null),
-        receiptNo: generateNextReceiptNo(null),
+        tempReceiptNo: generateNextReceiptNo(null),
       }));
     }
   };
@@ -856,7 +856,7 @@ function DataCapture() {
         tertiaryService: record.tertiaryService || "None",
         amountPayableTertiary: record.amountPayableTertiary || 0,
         mpesaRefNo: record.mpesaRefNo || "",
-        receiptNo: record.receiptNo || "",
+        tempReceiptNo: record.tempReceiptNo || "",
         burialPermitNumber: record.burialPermitNumber || "",
         burialPermitDate: record.burialPermitDate ? record.burialPermitDate.split("T")[0] : "",
         burialPermitIssuedBy: record.burialPermitIssuedBy || "",
@@ -1104,20 +1104,20 @@ function DataCapture() {
 
     // Validate attachments are required
     const totalAttachments = files.length + existingAttachments.length;
-    
+
     if (!editId) {
-        if (formData.ageCategory === "Stillborn" && totalAttachments < 1) {
-            error("Medical Certificate of Stillbirth is required for Stillborn category. Please upload it.");
-            return;
-        }
-        if (formData.ageCategory === "Infant" && totalAttachments < 1) {
-            error("Birth Certificate is required for Infant category. Please upload it.");
-            return;
-        }
-        if (["Adult", "Child"].includes(formData.ageCategory) && totalAttachments < 1) {
-             error("Attachments are required for this age category. Please upload at least one document.");
-             return;
-        }
+      if (formData.ageCategory === "Stillborn" && totalAttachments < 1) {
+        error("Medical Certificate of Stillbirth is required for Stillborn category. Please upload it.");
+        return;
+      }
+      if (formData.ageCategory === "Infant" && totalAttachments < 1) {
+        error("Birth Certificate is required for Infant category. Please upload it.");
+        return;
+      }
+      if (["Adult", "Child"].includes(formData.ageCategory) && totalAttachments < 1) {
+        error("Attachments are required for this age category. Please upload at least one document.");
+        return;
+      }
     }
 
     setLoading(true);
@@ -1247,7 +1247,7 @@ function DataCapture() {
           tertiaryService: "None",
           amountPayableTertiary: 0,
           mpesaRefNo: "",
-          receiptNo: "",
+          tempReceiptNo: "",
           burialPermitNumber: "",
           burialPermitDate: getTodayDate(),
           burialPermitIssuedBy: "",
@@ -1316,7 +1316,7 @@ function DataCapture() {
           tertiaryService: "None",
           amountPayableTertiary: 0,
           mpesaRefNo: "",
-          receiptNo: newReceiptNo,
+          tempReceiptNo: newReceiptNo,
           burialPermitNumber: "",
           burialPermitDate: getTodayDate(),
           burialPermitIssuedBy: "",
@@ -1359,7 +1359,7 @@ function DataCapture() {
           tertiaryService: "None",
           amountPayableTertiary: 0,
           mpesaRefNo: "",
-          receiptNo: newReceiptNo,
+          tempReceiptNo: newReceiptNo,
           burialPermitNumber: "",
           burialPermitDate: getTodayDate(),
           burialPermitIssuedBy: "",
@@ -2140,7 +2140,7 @@ function DataCapture() {
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 <input
                   type="text"
-                  value={formData.receiptNo}
+                  value={formData.tempReceiptNo}
                   readOnly
                   placeholder="Auto-generated"
                   style={{
