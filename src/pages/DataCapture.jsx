@@ -639,7 +639,7 @@ function DataCapture() {
 
     if (!latestReceiptNo) {
       // First receipt number of the year
-      return `RCP-${currentYear}-0001`;
+      return `TRCP-${currentYear}-0001`;
     }
 
     // Parse the latest receipt number to extract the number
@@ -650,10 +650,10 @@ function DataCapture() {
     if (latestYear === currentYear) {
       // Same year, increment the number
       const nextNumber = latestNumber + 1;
-      return `RCP-${currentYear}-${String(nextNumber).padStart(4, "0")}`;
+      return `TRCP-${currentYear}-${String(nextNumber).padStart(4, "0")}`;
     } else {
       // New year, start from 0001
-      return `RCP-${currentYear}-0001`;
+      return `TRCP-${currentYear}-0001`;
     }
   };
 
@@ -680,13 +680,13 @@ function DataCapture() {
     burialLocation: "",
     burialTime: "",
     primaryService: "Burial",
-    amountPaidBurial: "",
+    amountPayableBurial: "",
     secondaryService: "None",
-    amountPaidSecondary: 0,
+    amountPayableSecondary: 0,
     tertiaryService: "None",
-    amountPaidTertiary: 0,
+    amountPayableTertiary: 0,
     mpesaRefNo: "",
-    receiptNo: "",
+    tempReceiptNo: "",
     burialPermitNumber: "",
     burialPermitDate: getTodayDate(),
     burialPermitIssuedBy: "",
@@ -718,28 +718,38 @@ function DataCapture() {
   const refreshApplicantId = async () => {
     try {
       const res = await apiService.getLatestApplicantId();
-      const latestId = res.data?.data?.applicantId || res.data?.applicantId || res.data?.latestApplicantId || null;
-      const newId = generateNextApplicantId(latestId);
-      setFormData((prev) => ({ ...prev, applicantId: newId }));
+      const nextId = res.data?.applicantId || res.data?.data?.applicantId;
+
+      if (nextId) {
+        setFormData((prev) => ({ ...prev, applicantId: nextId }));
+      } else {
+        const fallbackId = generateNextApplicantId(null);
+        setFormData((prev) => ({ ...prev, applicantId: fallbackId }));
+      }
       success("Applicant ID refreshed");
     } catch (err) {
       console.error("Error refreshing Applicant ID:", err);
-      const newId = generateNextApplicantId(null);
-      setFormData((prev) => ({ ...prev, applicantId: newId }));
+      const fallbackId = generateNextApplicantId(null);
+      setFormData((prev) => ({ ...prev, applicantId: fallbackId }));
     }
   };
 
   const refreshReceiptNo = async () => {
     try {
       const res = await apiService.getLatestReceiptNo();
-      const latestNo = res.data?.data?.receiptNo || res.data?.receiptNo || res.data?.latestReceiptNo || null;
-      const newNo = generateNextReceiptNo(latestNo);
-      setFormData((prev) => ({ ...prev, receiptNo: newNo }));
+      const nextNo = res.data?.tempReceiptNo || res.data?.receiptNo || res.data?.data?.tempReceiptNo || res.data?.data?.receiptNo;
+
+      if (nextNo) {
+        setFormData((prev) => ({ ...prev, tempReceiptNo: nextNo }));
+      } else {
+        const fallbackNo = generateNextReceiptNo(null);
+        setFormData((prev) => ({ ...prev, tempReceiptNo: fallbackNo }));
+      }
       success("Receipt Number refreshed");
     } catch (err) {
       console.error("Error refreshing Receipt No:", err);
-      const newNo = generateNextReceiptNo(null);
-      setFormData((prev) => ({ ...prev, receiptNo: newNo }));
+      const fallbackNo = generateNextReceiptNo(null);
+      setFormData((prev) => ({ ...prev, tempReceiptNo: fallbackNo }));
     }
   };
 
@@ -751,30 +761,20 @@ function DataCapture() {
         apiService.getLatestReceiptNo(),
       ]);
 
-      console.log("API Response:", appIdRes.data);
-      const latestId = appIdRes.data?.data?.applicantId || appIdRes.data?.applicantId || appIdRes.data?.latestApplicantId || null;
-      const latestReceiptNo = receiptNoRes.data?.data?.receiptNo || receiptNoRes.data?.receiptNo || receiptNoRes.data?.latestReceiptNo || null;
+      const nextId = appIdRes.data?.applicantId || appIdRes.data?.data?.applicantId;
+      const nextReceiptNo = receiptNoRes.data?.tempReceiptNo || receiptNoRes.data?.receiptNo || receiptNoRes.data?.data?.tempReceiptNo || receiptNoRes.data?.data?.receiptNo;
 
-      console.log("Extracted latestId:", latestId);
-      const newApplicantId = generateNextApplicantId(latestId);
-      const newReceiptNo = generateNextReceiptNo(latestReceiptNo);
-
-      console.log("Setting form with newApplicantId:", newApplicantId);
       setFormData((prev) => ({
         ...prev,
-        applicantId: newApplicantId,
-        receiptNo: newReceiptNo,
+        applicantId: nextId || generateNextApplicantId(null),
+        tempReceiptNo: nextReceiptNo || generateNextReceiptNo(null),
       }));
     } catch (err) {
       console.error("Error fetching latest IDs:", err);
-      // Fallback: generate IDs starting from 0001
-      const newApplicantId = generateNextApplicantId(null);
-      const newReceiptNo = generateNextReceiptNo(null);
-
       setFormData((prev) => ({
         ...prev,
-        applicantId: newApplicantId,
-        receiptNo: newReceiptNo,
+        applicantId: generateNextApplicantId(null),
+        tempReceiptNo: generateNextReceiptNo(null),
       }));
     }
   };
@@ -850,13 +850,13 @@ function DataCapture() {
         burialLocation: record.burialLocation || "",
         burialTime: record.burialTime || "",
         primaryService: record.primaryService || "Burial",
-        amountPaidBurial: record.amountPaidBurial || "",
+        amountPayableBurial: record.amountPayableBurial || "",
         secondaryService: record.secondaryService || "None",
-        amountPaidSecondary: record.amountPaidSecondary || 0,
+        amountPayableSecondary: record.amountPayableSecondary || 0,
         tertiaryService: record.tertiaryService || "None",
-        amountPaidTertiary: record.amountPaidTertiary || 0,
+        amountPayableTertiary: record.amountPayableTertiary || 0,
         mpesaRefNo: record.mpesaRefNo || "",
-        receiptNo: record.receiptNo || "",
+        tempReceiptNo: record.tempReceiptNo || "",
         burialPermitNumber: record.burialPermitNumber || "",
         burialPermitDate: record.burialPermitDate ? record.burialPermitDate.split("T")[0] : "",
         burialPermitIssuedBy: record.burialPermitIssuedBy || "",
@@ -935,7 +935,7 @@ function DataCapture() {
   };
 
   const validateMpesaRef = (ref) => {
-    const mpesaRegex = /^[A-Z0-9]{10}$/;
+    const mpesaRegex = /^[A-Z0-9]{10}$/i;
     return mpesaRegex.test(ref);
   };
 
@@ -965,7 +965,7 @@ function DataCapture() {
           amount = burialTime === "Daytime" ? (loc.daytimePrice || 0) : (loc.nighttimePrice || 0);
         }
 
-        newFormData.amountPaidBurial = amount.toString();
+        newFormData.amountPayableBurial = amount.toString();
       }
     }
 
@@ -1097,27 +1097,27 @@ function DataCapture() {
       return;
     }
 
-    if (!formData.amountPaidBurial) {
+    if (!formData.amountPayableBurial) {
       error("Amount Payable for Burial is required");
       return;
     }
 
     // Validate attachments are required
     const totalAttachments = files.length + existingAttachments.length;
-    
+
     if (!editId) {
-        if (formData.ageCategory === "Stillborn" && totalAttachments < 1) {
-            error("Medical Certificate of Stillbirth is required for Stillborn category. Please upload it.");
-            return;
-        }
-        if (formData.ageCategory === "Infant" && totalAttachments < 1) {
-            error("Birth Certificate is required for Infant category. Please upload it.");
-            return;
-        }
-        if (["Adult", "Child"].includes(formData.ageCategory) && totalAttachments < 1) {
-             error("Attachments are required for this age category. Please upload at least one document.");
-             return;
-        }
+      if (formData.ageCategory === "Stillborn" && totalAttachments < 1) {
+        error("Medical Certificate of Stillbirth is required for Stillborn category. Please upload it.");
+        return;
+      }
+      if (formData.ageCategory === "Infant" && totalAttachments < 1) {
+        error("Birth Certificate is required for Infant category. Please upload it.");
+        return;
+      }
+      if (["Adult", "Child"].includes(formData.ageCategory) && totalAttachments < 1) {
+        error("Attachments are required for this age category. Please upload at least one document.");
+        return;
+      }
     }
 
     setLoading(true);
@@ -1193,7 +1193,7 @@ function DataCapture() {
         // Create new record using public endpoint (no auth required)
         const res = await apiService.submitRecordPublic(dataToSubmit);
         const submittedRecord = res.data;
-        success("Record created successfully!");
+        success("Record submitted successfully! Your acknowledgement PDF is being generated...");
 
         // Generate and download acknowledgement PDF
         try {
@@ -1206,11 +1206,12 @@ function DataCapture() {
             ...formData,
             ...submittedRecord,
             // Map field names for consistency
-            amountPaidBurial: formData.amountPayableBurial || submittedRecord.amountPaidBurial,
+            amountPayableBurial: formData.amountPayableBurial || submittedRecord.amountPayableBurial,
             applicantIdPassport: formData.applicantIdPassportNo || submittedRecord.applicantIdPassport,
           };
           generateAcknowledgementPDF(recordWithDetails, settings.formatDate);
-          success("Acknowledgement PDF downloaded successfully!");
+          // Acknowledgement PDF downloaded successfully
+          console.log("Acknowledgement PDF generated successfully");
         } catch (pdfErr) {
           console.error("⚠️ Error generating acknowledgement PDF:", pdfErr);
           // Don't fail the submission if PDF generation fails
@@ -1240,13 +1241,13 @@ function DataCapture() {
           burialLocation: "",
           burialTime: "",
           primaryService: "Burial",
-          amountPaidBurial: "",
+          amountPayableBurial: "",
           secondaryService: "None",
-          amountPaidSecondary: 0,
+          amountPayableSecondary: 0,
           tertiaryService: "None",
-          amountPaidTertiary: 0,
+          amountPayableTertiary: 0,
           mpesaRefNo: "",
-          receiptNo: "",
+          tempReceiptNo: "",
           burialPermitNumber: "",
           burialPermitDate: getTodayDate(),
           burialPermitIssuedBy: "",
@@ -1309,13 +1310,13 @@ function DataCapture() {
           burialLocation: "",
           burialTime: "",
           primaryService: "Burial",
-          amountPaidBurial: "",
+          amountPayableBurial: "",
           secondaryService: "None",
-          amountPaidSecondary: 0,
+          amountPayableSecondary: 0,
           tertiaryService: "None",
-          amountPaidTertiary: 0,
+          amountPayableTertiary: 0,
           mpesaRefNo: "",
-          receiptNo: newReceiptNo,
+          tempReceiptNo: newReceiptNo,
           burialPermitNumber: "",
           burialPermitDate: getTodayDate(),
           burialPermitIssuedBy: "",
@@ -1352,13 +1353,13 @@ function DataCapture() {
           burialLocation: "",
           burialTime: "",
           primaryService: "Burial",
-          amountPaidBurial: "",
+          amountPayableBurial: "",
           secondaryService: "None",
-          amountPaidSecondary: 0,
+          amountPayableSecondary: 0,
           tertiaryService: "None",
-          amountPaidTertiary: 0,
+          amountPayableTertiary: 0,
           mpesaRefNo: "",
-          receiptNo: newReceiptNo,
+          tempReceiptNo: newReceiptNo,
           burialPermitNumber: "",
           burialPermitDate: getTodayDate(),
           burialPermitIssuedBy: "",
@@ -1734,6 +1735,8 @@ function DataCapture() {
                 <option value="Child">Child</option>
                 <option value="Parent">Parent</option>
                 <option value="Sibling">Sibling</option>
+                <option value="Relative">Relative</option>
+                <option value="Friend">Friend</option>
                 <option value="Other">Other</option>
               </select>
             </FormGroup>
@@ -1820,8 +1823,8 @@ function DataCapture() {
               <label>Amount Payable for Burial *</label>
               <input
                 type="number"
-                name="amountPaidBurial"
-                value={formData.amountPaidBurial}
+                name="amountPayableBurial"
+                value={formData.amountPayableBurial}
                 readOnly
                 placeholder="Auto-calculated"
                 min="0"
@@ -1854,11 +1857,11 @@ function DataCapture() {
               </select>
             </FormGroup>
             <FormGroup>
-              <label>Amount Paid for Secondary Service</label>
+              <label>Amount Payable for Secondary Service</label>
               <input
                 type="number"
-                name="amountPaidSecondary"
-                value={formData.amountPaidSecondary}
+                name="amountPayableSecondary"
+                value={formData.amountPayableSecondary}
                 onChange={handleChange}
                 placeholder="Enter amount"
                 min="0"
@@ -1881,11 +1884,11 @@ function DataCapture() {
               </select>
             </FormGroup>
             <FormGroup>
-              <label>Amount Paid for Other Services</label>
+              <label>Amount Payable for Other Services</label>
               <input
                 type="number"
-                name="amountPaidTertiary"
-                value={formData.amountPaidTertiary}
+                name="amountPayableTertiary"
+                value={formData.amountPayableTertiary}
                 onChange={handleChange}
                 placeholder="Enter amount"
                 min="0"
@@ -2133,11 +2136,11 @@ function DataCapture() {
               </HelperText>
             </FormGroup>
             <FormGroup>
-              <label>Receipt No.</label>
+              <label>Temp Receipt No.</label>
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 <input
                   type="text"
-                  value={formData.receiptNo}
+                  value={formData.tempReceiptNo}
                   readOnly
                   placeholder="Auto-generated"
                   style={{

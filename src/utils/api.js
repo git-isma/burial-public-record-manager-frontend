@@ -56,7 +56,7 @@ export const API_ENDPOINTS = {
     PRESIGNED_URL: '/public/presigned-url',
     LOCATIONS: '/locations',
     LATEST_APPLICANT_ID: '/public/latest-applicant-id',
-    LATEST_RECEIPT_NO: '/public/latest-receipt-no',
+    LATEST_RECEIPT_NO: '/public/latest-temp-receipt-number',
   },
   UPLOAD: {
     PRESIGNED_URL: '/upload/presigned-url',

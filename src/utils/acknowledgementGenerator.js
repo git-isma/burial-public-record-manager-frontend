@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import ismaLogo from '../assets/ISMA-logo.png';
 
-export const generateAcknowledgementPDF = (record, formatDate) => {
+export const generateAcknowledgementPDF = async (record, formatDate) => {
     try {
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pageWidth = pdf.internal.pageSize.getWidth();
@@ -18,8 +18,35 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
             border: [209, 213, 219]
         };
 
+        // Helper to load image as base64
+        const loadImageBase64 = async (url) => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const blob = await response.blob();
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch (err) {
+                console.error('Error fetching image for PDF:', err);
+                throw err;
+            }
+        };
+
+        const checkPageBreak = (y, needed) => {
+            if (y + needed > pageHeight - 25) {
+                pdf.addPage();
+                return 20;
+            }
+            return y;
+        };
+
         // Helper to draw section header
         const drawSectionHeader = (title, y) => {
+            y = checkPageBreak(y, 15);
             pdf.setFillColor(...COLORS.secondary);
             pdf.rect(14, y - 5, pageWidth - 28, 8, 'F');
             pdf.setTextColor(...COLORS.primary);
@@ -31,6 +58,7 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
 
         // Helper to draw key-value row
         const drawRow = (label, value, y, xStart = 16, labelWidth = 60) => {
+            y = checkPageBreak(y, 8);
             pdf.setTextColor(...COLORS.subtext);
             pdf.setFontSize(9);
             pdf.setFont(undefined, 'normal');
@@ -50,35 +78,57 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
         let yPosition = 0;
 
         // --- HEADER ---
-        // Header Background
         pdf.setFillColor(...COLORS.primary);
-        pdf.rect(0, 0, pageWidth, 40, 'F');
+        pdf.rect(0, 0, pageWidth, 48, 'F'); // Increased height slightly for more breathing room
 
-        // Logo
         try {
-            pdf.addImage(ismaLogo, 'PNG', 15, 8, 25, 25);
+            // Center logo vertically in the 48mm header
+            pdf.addImage(ismaLogo, 'PNG', 12, 6, 28, 28);
         } catch (logoErr) {
             console.warn('Could not add logo to PDF:', logoErr);
         }
 
-        // Title
+        const centerX = (pageWidth + 40) / 2;
+
         pdf.setTextColor(...COLORS.white);
-        pdf.setFontSize(22);
+        pdf.setFontSize(18);
         pdf.setFont(undefined, 'bold');
-        pdf.text('BURIAL RECORD', 45, 20);
+        pdf.text('Islamia School & Mosque Association', centerX, 15, { align: 'center' });
 
-        pdf.setFontSize(10);
-        pdf.setFont(undefined, 'normal');
-        pdf.setTextColor(200, 200, 255);
-        pdf.text('OFFICIAL ACKNOWLEDGEMENT', 45, 28);
-
-        // Date on Right
         pdf.setFontSize(9);
-        pdf.setTextColor(255, 255, 255);
-        pdf.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - 15, 20, { align: 'right' });
-        pdf.text(`Time: ${new Date().toLocaleTimeString()}`, pageWidth - 15, 28, { align: 'right' });
+        pdf.setFont(undefined, 'bold');
+        pdf.setTextColor(240, 240, 255);
+        pdf.text('CUSTODIANS OF THE SUNNI MUSLIM CEMETERIES - KARIOKOR & LANGATA', centerX, 21, { align: 'center' });
 
-        yPosition = 55;
+        pdf.setFontSize(8);
+        pdf.setFont(undefined, 'normal');
+        pdf.setTextColor(220, 220, 255);
+        pdf.text('P.O. Box 21015 - 00500 NAIROBI | Cell / Whatsapp: +254 113217749 | Email: office@isma.co.ke', centerX, 26, { align: 'center' });
+
+        // Separator line - Centered in remaining space
+        pdf.setDrawColor(255, 255, 255);
+        pdf.setLineWidth(0.2);
+        pdf.line(42, 29, pageWidth - 15, 29);
+
+        // Main Document Title - Centered in remaining space
+        pdf.setFontSize(14);
+        pdf.setFont(undefined, 'bold');
+        pdf.setTextColor(...COLORS.white);
+        pdf.text('BURIAL RECORD ACKNOWLEDGEMENT', centerX, 37, { align: 'center' });
+
+        // Metadata line - Centered in remaining space
+        pdf.setFontSize(8);
+        pdf.setTextColor(220, 220, 255);
+        pdf.setFont(undefined, 'normal');
+        pdf.text(`PDF Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, centerX, 42, { align: 'center' });
+
+        // Badge in the top right
+        pdf.setFontSize(8);
+        pdf.setFont(undefined, 'bold');
+        pdf.setTextColor(255, 255, 255);
+        // pdf.text('OFFICIAL DOCUMENT', pageWidth - 15, 15, { align: 'right' });
+
+        yPosition = 72; // Set initial body position below the header area
 
         // --- STATUS BADGE ---
         const statusColors = {
@@ -89,7 +139,6 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
         };
         const statusColor = statusColors[record.status] || [107, 114, 128];
 
-        // Draw Status Box
         let statusText = (record.status || 'Pending').toUpperCase();
         if (statusText === 'PENDING') statusText = 'PENDING VERIFICATION';
 
@@ -97,23 +146,21 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
         pdf.setFont(undefined, 'bold');
 
         const textWidth = pdf.getTextWidth(statusText);
-        const boxWidth = textWidth + 16; // Add generous padding
-        const boxX = pageWidth - boxWidth - 15; // Align from right edge
+        const boxWidth = textWidth + 16;
+        const boxX = pageWidth - boxWidth - 15; // Align to the right
+        const boxY = 53; // Position below blue header (ends at 48)
 
         pdf.setDrawColor(...statusColor);
-        pdf.setFillColor(statusColor[0], statusColor[1], statusColor[2], 0.1); // Light tint
-        pdf.roundedRect(boxX, 45, boxWidth, 10, 2, 2, 'FD');
+        pdf.setFillColor(statusColor[0], statusColor[1], statusColor[2], 0.1);
+        pdf.roundedRect(boxX, boxY, boxWidth, 10, 2, 2, 'FD');
 
         pdf.setTextColor(...statusColor);
-        pdf.text(statusText, boxX + (boxWidth / 2), 51.5, { align: 'center' });
+        pdf.text(statusText, boxX + (boxWidth / 2), boxY + 6.5, { align: 'center' });
 
-        // Rejection Reason special handling
+        yPosition = 72; // Starting position for the rest of the content
+
         if (record.status === 'Rejected' && record.rejectionReason) {
             yPosition += 5;
-            pdf.setFillColor(254, 242, 242);
-            pdf.setDrawColor(254, 202, 202);
-            pdf.rect(15, yPosition, pageWidth - 30, 0, 'F'); // Just setting pos
-
             pdf.setTextColor(220, 38, 38);
             pdf.setFontSize(9);
             pdf.setFont(undefined, 'bold');
@@ -126,7 +173,7 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
 
             yPosition += (splitReason.length * 5) + 15;
         } else {
-            yPosition = 65;
+            yPosition = 72;
         }
 
         // --- DECEASED INFO ---
@@ -143,7 +190,6 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
             { l: 'Date of Burial', v: record.dateOfBurial ? formatDate(record.dateOfBurial) : '-' }
         ];
 
-        // 2-Column Layout for Deceased
         let leftY = yPosition;
         let rightY = yPosition;
 
@@ -160,7 +206,6 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
         // --- NEXT OF KIN ---
         yPosition = drawSectionHeader('Next of Kin', yPosition);
         yPosition += 5;
-
         yPosition = drawRow('Name', record.nextOfKinName || '-', yPosition, 16, 35);
         yPosition = drawRow('Relationship', record.nextOfKinRelationship || '-', yPosition, 16, 35);
         yPosition = drawRow('Contact', record.nextOfKinContact || '-', yPosition, 16, 35);
@@ -172,24 +217,24 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
         // --- BURIAL & SERVICE DETAILS ---
         yPosition = drawSectionHeader('Burial & Services', yPosition);
         yPosition += 5;
-
-        // Table-like structure for services
-        const startY = yPosition;
-
         yPosition = drawRow('Location', record.burialLocation || '-', yPosition, 16, 35);
         yPosition = drawRow('Primary Service', record.primaryService || '-', yPosition, 16, 35);
-        yPosition = drawRow('Amount Payable', `KES ${parseInt(record.amountPaidBurial || 0).toLocaleString()}`, yPosition, 16, 35);
+        yPosition = drawRow('Amount Payable', `KES ${parseInt(record.amountPayableBurial || 0).toLocaleString()}`, yPosition, 16, 35);
         yPosition += 5;
 
-
         // --- PAYMENT INFO ---
-        if (record.receiptNo || record.mpesaRefNo) {
+        if (record.receiptNo || record.tempReceiptNo || record.mpesaRefNo) {
             yPosition = drawSectionHeader('Payment Verification', yPosition);
             yPosition += 5;
-
-            if (record.receiptNo) yPosition = drawRow('Receipt No', record.receiptNo, yPosition, 16, 45);
+            if (record.status === 'Verified' && record.receiptNo) {
+                yPosition = drawRow('Official Receipt No', record.receiptNo, yPosition, 16, 45);
+                if (record.tempReceiptNo) {
+                    yPosition = drawRow('Temp Receipt Ref', record.tempReceiptNo, yPosition, 16, 45);
+                }
+            } else {
+                yPosition = drawRow('Temp Receipt No', record.tempReceiptNo || record.receiptNo, yPosition, 16, 45);
+            }
             if (record.mpesaRefNo) yPosition = drawRow('M-Pesa Reference', record.mpesaRefNo, yPosition, 16, 45);
-
             yPosition += 8;
         }
 
@@ -197,7 +242,6 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
         if (record.burialPermitNumber) {
             yPosition = drawSectionHeader('Burial Permit Details', yPosition);
             yPosition += 5;
-
             yPosition = drawRow('Permit No', record.burialPermitNumber || '-', yPosition, 16, 45);
             yPosition = drawRow('Date of Issue', record.burialPermitDate ? formatDate(record.burialPermitDate) : '-', yPosition, 16, 45);
             yPosition = drawRow('Issued By', record.burialPermitIssuedBy || '-', yPosition, 16, 45);
@@ -207,7 +251,7 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
             yPosition += 5;
         }
 
-        // --- SUBMITTER ---
+        // --- APPLICANT DETAILS ---
         const applicantName = record.applicantName || record.submitterName;
         const applicantEmail = record.applicantEmail || record.submitterEmail;
         const applicantPhone = record.applicantPhone || record.submitterPhone;
@@ -217,7 +261,6 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
         if (applicantName || applicantEmail || applicantId) {
             yPosition = drawSectionHeader('Applicant Details', yPosition);
             yPosition += 5;
-
             if (applicantId) yPosition = drawRow('Applicant ID', applicantId, yPosition, 16, 35);
             yPosition = drawRow('Name', applicantName || '-', yPosition, 16, 35);
             yPosition = drawRow('ID/Passport', applicantIdPassport || '-', yPosition, 16, 35);
@@ -226,13 +269,11 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
             yPosition += 5;
         }
 
-
         // --- ADDITIONAL RECORD DETAILS ---
-        // Collect all fields that haven't been displayed yet and have values
         const fieldsToExclude = [
             'firstName', 'middleName', 'lastName', 'idPassportNo', 'nationality', 'gender', 'age', 'ageCategory',
             'dateOfDeath', 'dateOfBurial', 'nextOfKinName', 'nextOfKinRelationship', 'nextOfKinContact', 'nextOfKinIdPassport',
-            'burialLocation', 'primaryService', 'amountPaidBurial', 'receiptNo', 'mpesaRefNo',
+            'burialLocation', 'primaryService', 'amountPayableBurial', 'receiptNo', 'tempReceiptNo', 'mpesaRefNo',
             'burialPermitNumber', 'burialPermitDate', 'burialPermitIssuedBy', 'burialPermitIssuedByContact',
             'burialPermitIssuedTo', 'burialPermitIssuedToContact', 'applicantName', 'applicantEmail', 'applicantPhone',
             'applicantId', 'applicantIdPassport', 'applicantIdPassportNo', 'submitterName', 'submitterEmail', 'submitterPhone',
@@ -242,29 +283,22 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
         const additionalFields = [];
         Object.keys(record).forEach(key => {
             const value = record[key];
-            // Include if not in exclude list, not empty, not null, and not an object/array
             if (!fieldsToExclude.includes(key) && value && typeof value !== 'object') {
                 additionalFields.push({ key, value });
             }
         });
 
         if (additionalFields.length > 0) {
-            if (yPosition > pageHeight - 60) {
-                pdf.addPage();
-                yPosition = 20;
-            }
-
             yPosition = drawSectionHeader('Additional Details', yPosition);
             yPosition += 5;
 
             additionalFields.forEach(field => {
                 const label = field.key
-                    .replace(/([A-Z])/g, ' $1') // Add space before capitals
-                    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase())
                     .trim();
 
                 let displayValue = field.value;
-                // Format dates if they look like ISO dates
                 if (typeof field.value === 'string' && field.value.match(/^\d{4}-\d{2}-\d{2}/)) {
                     displayValue = formatDate(field.value);
                 }
@@ -274,44 +308,98 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
             yPosition += 5;
         }
 
-
-        // --- ATTACHMENTS ---
+        // --- ATTACHMENTS PREVIEW ---
         if (record.attachments && record.attachments.length > 0) {
-            if (yPosition > pageHeight - 60) {
-                pdf.addPage();
-                yPosition = 20;
-            }
-
-            yPosition = drawSectionHeader('Attachments', yPosition);
+            yPosition = drawSectionHeader('Documents & Attachments', yPosition);
             yPosition += 8;
 
             const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-            record.attachments.forEach((att, index) => {
-                const filename = att.filename || `Document ${index + 1}`;
-                const fullUrl = `${API_BASE_URL}/${att.path.replace(/^\//, '')}`;
+            for (const att of record.attachments) {
+                const filename = att.filename || 'Attachment';
+                const originalUrl = att.path.startsWith('http') ? att.path : `${API_BASE_URL}/${att.path.replace(/^\//, '')}`;
+                const fullUrl = `${API_BASE_URL}/upload/image-proxy?url=${encodeURIComponent(originalUrl)}`;
 
-                pdf.setTextColor(37, 99, 235); // Link Color
-                pdf.setFontSize(9);
-                pdf.setFont(undefined, 'normal');
-                pdf.textWithLink(`• ${filename}`, 16, yPosition, { url: fullUrl }); // Just filename
+                const cleanPath = att.path.split('?')[0];
+                const extension = cleanPath.split('.').pop().toLowerCase();
+                const isImageFile = ['jpg', 'jpeg', 'png', 'webp'].includes(extension);
 
-                // Add an explicit 'View' text next to it for clarity
-                pdf.setFontSize(8);
-                pdf.setTextColor(...COLORS.subtext);
-                pdf.text('(Click to view)', 16 + pdf.getTextWidth(`• ${filename}`) + 2, yPosition);
+                yPosition = checkPageBreak(yPosition, 20);
 
-                yPosition += 6;
-            });
-            yPosition += 10;
+                if (isImageFile) {
+                    try {
+                        const base64Data = await loadImageBase64(fullUrl);
+                        const img = new Image();
+                        await new Promise((resolve, reject) => {
+                            img.onload = resolve;
+                            img.onerror = reject;
+                            img.src = base64Data;
+                        });
+
+                        const maxWidth = pageWidth - 32;
+                        const scale = maxWidth / img.width;
+                        const displayWidth = maxWidth;
+                        const displayHeight = img.height * scale;
+
+                        yPosition = checkPageBreak(yPosition, displayHeight + 15);
+
+                        pdf.setTextColor(...COLORS.text);
+                        pdf.setFontSize(9);
+                        pdf.setFont(undefined, 'bold');
+                        pdf.text(`${filename} (Image Preview):`, 16, yPosition);
+                        yPosition += 6;
+
+                        pdf.addImage(base64Data, extension.toUpperCase() === 'JPG' ? 'JPEG' : 'PNG', 16, yPosition, displayWidth, displayHeight);
+                        yPosition += displayHeight + 12;
+                    } catch (imgErr) {
+                        pdf.setTextColor(220, 38, 38);
+                        pdf.setFontSize(9);
+                        pdf.text(`• ${filename} [Failed to load image preview]`, 16, yPosition);
+                        pdf.setTextColor(37, 99, 235);
+                        pdf.textWithLink('  (View Online)', 16 + pdf.getTextWidth(`• ${filename} [Failed to load image preview]`), yPosition, { url: fullUrl });
+                        yPosition += 10;
+                    }
+                } else if (extension === 'pdf') {
+                    // Visual Box for PDF since we can't embed it directly
+                    yPosition = checkPageBreak(yPosition, 25);
+
+                    pdf.setDrawColor(...COLORS.border);
+                    pdf.setFillColor(...COLORS.secondary);
+                    pdf.roundedRect(16, yPosition, pageWidth - 32, 20, 2, 2, 'FD');
+
+                    pdf.setTextColor(...COLORS.primary);
+                    pdf.setFontSize(10);
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text('PDF DOCUMENT', 24, yPosition + 8);
+
+                    pdf.setTextColor(...COLORS.text);
+                    pdf.setFontSize(9);
+                    pdf.setFont(undefined, 'normal');
+                    pdf.text(filename, 24, yPosition + 14);
+
+                    pdf.setTextColor(37, 99, 235);
+                    pdf.setFont(undefined, 'bold');
+                    const linkText = 'VIEW ATTACHED PDF';
+                    pdf.textWithLink(linkText, pageWidth - 24 - pdf.getTextWidth(linkText), yPosition + 12, { url: fullUrl });
+
+                    yPosition += 28;
+                } else {
+                    pdf.setTextColor(...COLORS.text);
+                    pdf.setFontSize(9);
+                    pdf.text(`• ${filename}`, 16, yPosition);
+                    pdf.setTextColor(37, 99, 235);
+                    pdf.textWithLink('  (View Document)', 16 + pdf.getTextWidth(`• ${filename}`), yPosition, { url: fullUrl });
+                    yPosition += 10;
+                }
+            }
+            yPosition += 5;
+            yPosition += 5;
         }
-
 
         // --- FOOTER ---
         const footerY = pageHeight - 25;
-        pdf.setFillColor(248, 250, 252); // Very light footer bg
+        pdf.setFillColor(248, 250, 252);
         pdf.rect(0, footerY, pageWidth, 25, 'F');
-
         pdf.setDrawColor(...COLORS.primary);
         pdf.setLineWidth(0.5);
         pdf.line(0, footerY, pageWidth, footerY);
@@ -319,7 +407,7 @@ export const generateAcknowledgementPDF = (record, formatDate) => {
         pdf.setFontSize(8);
         pdf.setTextColor(...COLORS.subtext);
         pdf.text('This document is a computer-generated official acknowledgement.', pageWidth / 2, footerY + 8, { align: 'center' });
-        pdf.text('Burial Record Management System', pageWidth / 2, footerY + 13, { align: 'center' });
+        pdf.text('Islamia School & Mosque Association Burial Application', pageWidth / 2, footerY + 13, { align: 'center' });
 
         const filename = `Acknowledgement-${new Date().getTime()}.pdf`;
         pdf.save(filename);

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import apiService from '../utils/api';
 import { generateAcknowledgementPDF } from '../utils/acknowledgementGenerator';
 import { useSettings } from '../contexts/SettingsContext';
 import { useToast } from '../contexts/ToastContext';
 import { Card, PageHeader, Button, theme } from '../styles/CommonStyles';
-import { MdDownload, MdDescription, MdCalendarToday, MdPerson, MdLocationOn, MdCheckCircle, MdEmail, MdArrowBack, MdErrorOutline } from 'react-icons/md';
+import { MdDownload, MdDescription, MdCalendarToday, MdPerson, MdLocationOn, MdCheckCircle, MdEmail, MdArrowBack, MdErrorOutline, MdInfo } from 'react-icons/md';
 import EmptyState from '../components/EmptyState';
 import { TableSkeleton } from '../components/LoadingSkeleton';
 
@@ -378,6 +378,7 @@ const Pagination = styled.div`
 
 function Records() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { formatDate } = useSettings();
   const { showToast } = useToast();
   const [records, setRecords] = useState([]);
@@ -387,14 +388,20 @@ function Records() {
   const [applicantEmail, setApplicantEmail] = useState('');
   const [emailInput, setEmailInput] = useState('');
 
-  // Load email from localStorage on mount
+  // Load email from URL query params or localStorage on mount
   useEffect(() => {
+    const emailParam = searchParams.get('email');
     const savedEmail = localStorage.getItem('burial_applicant_email');
-    if (savedEmail) {
+
+    if (emailParam) {
+      setApplicantEmail(emailParam);
+      setEmailInput(emailParam);
+      localStorage.setItem('burial_applicant_email', emailParam);
+    } else if (savedEmail) {
       setApplicantEmail(savedEmail);
       setEmailInput(savedEmail);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (applicantEmail) {
@@ -456,7 +463,7 @@ function Records() {
   const handleDownloadAcknowledgement = async (record) => {
     try {
       showToast('Generating acknowledgement PDF...', 'info');
-      generateAcknowledgementPDF(record, formatDate);
+      await generateAcknowledgementPDF(record, formatDate);
       showToast('Acknowledgement downloaded successfully!', 'success');
     } catch (err) {
       console.error('Error generating acknowledgement:', err);
@@ -633,6 +640,25 @@ function Records() {
                         <div className="value">{formatDate(record.createdAt)}</div>
                       </InfoRow>
 
+                      <InfoRow>
+                        <MdInfo className="icon" size={18} />
+                        <div className="label">Receipt No</div>
+                        <div className="value">
+                          {record.status === 'Verified' && record.receiptNo ? (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span>{record.receiptNo}</span>
+                              {record.tempReceiptNo && (
+                                <span style={{ fontSize: '11px', color: theme.colors.gray500, fontWeight: 'normal' }}>
+                                  Ref: {record.tempReceiptNo}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            record.tempReceiptNo || record.receiptNo
+                          )}
+                        </div>
+                      </InfoRow>
+
                       {record.status === 'Rejected' && record.rejectionReason && (
                         <RejectionInfo>
                           <MdErrorOutline className="icon" size={16} />
@@ -690,7 +716,7 @@ function Records() {
       )}
 
       <div style={{ textAlign: 'center', padding: '24px', color: theme.colors.gray500, fontSize: '12px' }}>
-        © 2025 Burial Live Application. All rights reserved.
+        © 2026 Burial Live Application. All rights reserved.
       </div>
     </RecordsContainer>
   );
