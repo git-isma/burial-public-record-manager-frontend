@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -5,9 +7,41 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-  background: #f5f5f5;
-  color: #333;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #FAFAFA;
+  color: #18181B;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar Styling to match staff app */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F4F4F5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #A1A1AA;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #71717A;
+}
+
+::selection {
+  background: rgba(99, 102, 241, 0.2);
+  color: #18181B;
+}
+
+*:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
 }
 
 body.dark-theme {

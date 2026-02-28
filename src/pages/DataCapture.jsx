@@ -31,9 +31,12 @@ import {
   MdWarning,
   MdCheckCircleOutline,
   MdCancel,
+  MdQrCode2,
 } from "react-icons/md";
 import { InlineSpinner } from "../components/Spinner";
 import Tooltip from "../components/Tooltip";
+import Modal from "../components/Modal";
+import paymentQrUrl from "../assets/payment-qr.jpeg";
 
 const SectionTitle = styled.h3`
   margin-top: ${(props) => (props.$first ? "0" : theme.spacing.xl)};
@@ -681,6 +684,7 @@ function DataCapture() {
     burialTime: "",
     primaryService: "Burial",
     amountPayableBurial: "",
+    amountToPayNow: "",
     secondaryService: "None",
     amountPayableSecondary: 0,
     tertiaryService: "None",
@@ -700,6 +704,7 @@ function DataCapture() {
   const [loading, setLoading] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState(""); // '', 'saving', 'saved'
   const [existingAttachments, setExistingAttachments] = useState([]);
+  const [showQRPreview, setShowQRPreview] = useState(false);
   const [locations, setLocations] = useState([]);
 
   // Fetch locations from API
@@ -851,6 +856,7 @@ function DataCapture() {
         burialTime: record.burialTime || "",
         primaryService: record.primaryService || "Burial",
         amountPayableBurial: record.amountPayableBurial || "",
+        amountToPayNow: record.amountToPayNow !== undefined ? record.amountToPayNow : (record.amountPayableBurial || ""),
         secondaryService: record.secondaryService || "None",
         amountPayableSecondary: record.amountPayableSecondary || 0,
         tertiaryService: record.tertiaryService || "None",
@@ -966,6 +972,7 @@ function DataCapture() {
         }
 
         newFormData.amountPayableBurial = amount.toString();
+        newFormData.amountToPayNow = amount.toString();
       }
     }
 
@@ -981,7 +988,14 @@ function DataCapture() {
   };
 
   const handleFileChange = (e) => {
-    setFiles(Array.from(e.target.files));
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFiles = Array.from(e.target.files);
+      setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
+    }
+  };
+
+  const handleRemoveFile = (indexToRemove) => {
+    setFiles((prevFiles) => prevFiles.filter((_, index) => index !== indexToRemove));
   };
 
   const handleSubmit = async (e) => {
@@ -1013,6 +1027,14 @@ function DataCapture() {
     // Validate M-Pesa reference if provided
     if (formData.mpesaRefNo && !validateMpesaRef(formData.mpesaRefNo)) {
       error("M-Pesa reference must be exactly 10 alphanumeric characters (e.g., ABC1234567)");
+      return;
+    }
+
+    // Validate amount to pay now
+    const amountToPay = parseFloat(formData.amountToPayNow || 0);
+    const amountPayable = parseFloat(formData.amountPayableBurial || 0);
+    if (amountToPay > amountPayable) {
+      error("Amount to Pay Now cannot exceed Amount Payable for Burial");
       return;
     }
 
@@ -1242,6 +1264,7 @@ function DataCapture() {
           burialTime: "",
           primaryService: "Burial",
           amountPayableBurial: "",
+          amountToPayNow: "",
           secondaryService: "None",
           amountPayableSecondary: 0,
           tertiaryService: "None",
@@ -1765,140 +1788,6 @@ function DataCapture() {
 
           <SectionTitle>
             <span className="section-icon">
-              <MdAttachFile />
-            </span>
-            Burial Location & Services
-          </SectionTitle>
-          <FormGrid>
-            <FormGroup>
-              <label>Location of Burial *</label>
-              <select
-                name="burialLocation"
-                value={formData.burialLocation}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Location</option>
-                {locations.map((loc, idx) => {
-                  const name = typeof loc === 'string' ? loc : loc.name;
-                  const id = typeof loc === 'string' ? `loc-${idx}` : (loc._id || loc.id);
-                  return (
-                    <option key={id} value={name}>
-                      {name}
-                    </option>
-                  );
-                })}
-              </select>
-            </FormGroup>
-            <FormGroup>
-              <label>Time of Burial *</label>
-              <select
-                name="burialTime"
-                value={formData.burialTime}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Time</option>
-                <option value="Daytime">Daytime</option>
-                <option value="Nighttime">Nighttime</option>
-              </select>
-              <HelperText>
-                <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
-                Select daytime or nighttime burial
-              </HelperText>
-            </FormGroup>
-            <FormGroup>
-              <label>Primary Service *</label>
-              <select
-                name="primaryService"
-                value={formData.primaryService}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Service</option>
-                <option value="Burial">Burial</option>
-              </select>
-            </FormGroup>
-            <FormGroup>
-              <label>Amount Payable for Burial *</label>
-              <input
-                type="number"
-                name="amountPayableBurial"
-                value={formData.amountPayableBurial}
-                readOnly
-                placeholder="Auto-calculated"
-                min="0"
-                required
-                style={{
-                  backgroundColor: "#f3f4f6",
-                  cursor: "not-allowed",
-                  color: "#374151",
-                  fontWeight: "600",
-                }}
-              />
-              <HelperText>
-                <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
-                Automatically calculated based on location and time of burial
-              </HelperText>
-            </FormGroup>
-            {/* 
-            <FormGroup>
-              <label>Secondary Service</label>
-              <select
-                name="secondaryService"
-                value={formData.secondaryService}
-                onChange={handleChange}
-              >
-                <option value="">Select Service</option>
-                <option value="None">None</option>
-                <option value="Head stone">Head stone</option>
-                <option value="Permanent grave">Permanent grave</option>
-                <option value="Maintenance">Maintenance</option>
-              </select>
-            </FormGroup>
-            <FormGroup>
-              <label>Amount Payable for Secondary Service</label>
-              <input
-                type="number"
-                name="amountPayableSecondary"
-                value={formData.amountPayableSecondary}
-                onChange={handleChange}
-                placeholder="Enter amount"
-                min="0"
-              />
-            </FormGroup>
-            <FormGroup>
-              <label>Other Services</label>
-              <select
-                name="tertiaryService"
-                value={formData.tertiaryService}
-                onChange={handleChange}
-              >
-                <option value="">Select Service</option>
-                <option value="None">None</option>
-                <option value="Burial Record application">
-                  Burial Record application
-                </option>
-                <option value="Donation">Donation</option>
-                <option value="Others">Others</option>
-              </select>
-            </FormGroup>
-            <FormGroup>
-              <label>Amount Payable for Other Services</label>
-              <input
-                type="number"
-                name="amountPayableTertiary"
-                value={formData.amountPayableTertiary}
-                onChange={handleChange}
-                placeholder="Enter amount"
-                min="0"
-              />
-            </FormGroup>
-            */}
-          </FormGrid>
-
-          <SectionTitle>
-            <span className="section-icon">
               <MdAssignment />
             </span>
             Burial Permit Details (Government Issued)
@@ -2106,6 +1995,223 @@ function DataCapture() {
             <span className="section-icon">
               <MdAttachFile />
             </span>
+            Burial Location & Services
+          </SectionTitle>
+          <FormGrid>
+            <FormGroup>
+              <label>Location of Burial *</label>
+              <select
+                name="burialLocation"
+                value={formData.burialLocation}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Location</option>
+                {locations.map((loc, idx) => {
+                  const name = typeof loc === 'string' ? loc : loc.name;
+                  const id = typeof loc === 'string' ? `loc-${idx}` : (loc._id || loc.id);
+                  return (
+                    <option key={id} value={name}>
+                      {name}
+                    </option>
+                  );
+                })}
+              </select>
+            </FormGroup>
+            <FormGroup>
+              <label>Time of Burial *</label>
+              <select
+                name="burialTime"
+                value={formData.burialTime}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Time</option>
+                <option value="Daytime">Daytime</option>
+                <option value="Nighttime">Nighttime</option>
+              </select>
+              <HelperText>
+                <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
+                Select daytime or nighttime burial
+              </HelperText>
+            </FormGroup>
+            <FormGroup>
+              <label>Primary Service *</label>
+              <select
+                name="primaryService"
+                value={formData.primaryService}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Service</option>
+                <option value="Burial">Burial</option>
+              </select>
+            </FormGroup>
+            <FormGroup>
+              <label>Amount Payable for Burial *</label>
+              <input
+                type="number"
+                name="amountPayableBurial"
+                value={formData.amountPayableBurial}
+                readOnly
+                placeholder="Auto-calculated"
+                min="0"
+                required
+                style={{
+                  backgroundColor: "#f3f4f6",
+                  cursor: "not-allowed",
+                  color: "#374151",
+                  fontWeight: "600",
+                  width: "100%"
+                }}
+              />
+              <HelperText style={{ marginTop: "8px", alignItems: "flex-start" }}>
+                <MdInfoOutline size={16} style={{ marginRight: "6px", flexShrink: 0, marginTop: "2px" }} />
+                <span>Automatically calculated standard fee based on location and time.</span>
+              </HelperText>
+            </FormGroup>
+            <FormGroup>
+              <label>
+                Amount to Pay Now *
+                <Tooltip
+                  content="Enter the actual amount being paid today. This defaults to the standard fee but can be lowered for committee-approved concessions or installments."
+                  position="right"
+                  multiline={true}
+                  width="400px"
+                >
+                  <InfoIcon>
+                    <MdInfoOutline size={18} />
+                  </InfoIcon>
+                </Tooltip>
+              </label>
+              <input
+                type="number"
+                name="amountToPayNow"
+                value={formData.amountToPayNow}
+                onChange={handleChange}
+                placeholder="Enter amount to pay"
+                min="0"
+                required
+              />
+              <HelperText style={{ marginTop: "8px", alignItems: "flex-start" }}>
+                <MdInfoOutline size={16} style={{ marginRight: "6px", flexShrink: 0, marginTop: "2px" }} />
+                <span><strong>Please enter this exact amount manually</strong> upon redirection to Pesawise.</span>
+              </HelperText>
+            </FormGroup>
+
+            <FormGroup>
+              <div style={{ display: "flex", height: "100%", alignItems: "stretch", backgroundColor: "var(--bg-card)", padding: "16px", borderRadius: "8px", border: "1px solid var(--border-color, #e5e7eb)", boxSizing: "border-box" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, paddingRight: "16px", justifyContent: "flex-start", alignItems: "center" }}>
+                  <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)" }}>Pay via Link</span>
+                  <div style={{ height: "80px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Button
+                      as="a"
+                      href="https://payments.pesawise.com/link/lmaiundtro"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      $variant="primary"
+                      style={{
+                        padding: "8px 16px",
+                        textDecoration: "none",
+                        whiteSpace: "nowrap",
+                        minHeight: "44px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "max-content"
+                      }}
+                    >
+                      PAY HERE
+                    </Button>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", flex: 1, borderLeft: "2px dashed var(--border-color, #d1d5db)", paddingLeft: "16px" }}>
+                  <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)" }}>Or Scan to Pay</span>
+                  <div
+                    onClick={() => setShowQRPreview(true)}
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      borderRadius: "12px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "#f9fafb", // dim background
+                      border: "1px dashed #e5e7eb",
+                      color: "#3D2F2F", // PAY HERE button color
+                    }}
+                  >
+                    <MdQrCode2 size={48} />
+                  </div>
+                  <span style={{ fontSize: "11px", color: "var(--text-secondary, #6b7280)", marginTop: "2px" }}>
+                    Click to view QR Code
+                  </span>
+                </div>
+              </div>
+            </FormGroup>
+            {/* 
+            <FormGroup>
+              <label>Secondary Service</label>
+              <select
+                name="secondaryService"
+                value={formData.secondaryService}
+                onChange={handleChange}
+              >
+                <option value="">Select Service</option>
+                <option value="None">None</option>
+                <option value="Head stone">Head stone</option>
+                <option value="Permanent grave">Permanent grave</option>
+                <option value="Maintenance">Maintenance</option>
+              </select>
+            </FormGroup>
+            <FormGroup>
+              <label>Amount Payable for Secondary Service</label>
+              <input
+                type="number"
+                name="amountPayableSecondary"
+                value={formData.amountPayableSecondary}
+                onChange={handleChange}
+                placeholder="Enter amount"
+                min="0"
+              />
+            </FormGroup>
+            <FormGroup>
+              <label>Other Services</label>
+              <select
+                name="tertiaryService"
+                value={formData.tertiaryService}
+                onChange={handleChange}
+              >
+                <option value="">Select Service</option>
+                <option value="None">None</option>
+                <option value="Burial Record application">
+                  Burial Record application
+                </option>
+                <option value="Donation">Donation</option>
+                <option value="Others">Others</option>
+              </select>
+            </FormGroup>
+            <FormGroup>
+              <label>Amount Payable for Other Services</label>
+              <input
+                type="number"
+                name="amountPayableTertiary"
+                value={formData.amountPayableTertiary}
+                onChange={handleChange}
+                placeholder="Enter amount"
+                min="0"
+              />
+            </FormGroup>
+            */}
+          </FormGrid>
+
+          <SectionTitle>
+            <span className="section-icon">
+              <MdAttachFile />
+            </span>
             Payment Information
           </SectionTitle>
           <FormGrid>
@@ -2276,7 +2382,55 @@ function DataCapture() {
               />
             </FileUploadArea>
             {files.length > 0 && (
-              <FileInfo>{files.length} file(s) selected</FileInfo>
+              <ExistingAttachmentsSection style={{ marginTop: "16px", background: "transparent", border: "1px dashed var(--border-color, #cbd5e1)" }}>
+                <h4 style={{ margin: "0 0 16px 0", fontSize: "14px", fontWeight: "600", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <MdAttachFile size={18} /> Selected Files - Ready to Upload ({files.length})
+                </h4>
+                <AttachmentsList>
+                  {files.map((file, index) => {
+                    const fileExtension = file.name.split(".").pop().toUpperCase();
+                    let fileIcon = "📄";
+                    if (fileExtension === "PDF") fileIcon = "📕";
+                    else if (["JPG", "JPEG", "PNG"].includes(fileExtension)) fileIcon = "🖼️";
+
+                    // Create an object URL for preview
+                    const fileUrl = URL.createObjectURL(file);
+
+                    return (
+                      <AttachmentItem 
+                        key={index} 
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                          // Allow the click to go through to open the link, but manage the URL cleanup later if needed
+                        }}
+                        style={{ cursor: "pointer" }}
+                        title={`Preview ${file.name}`}
+                      >
+                        <div className="file-icon">{fileIcon}</div>
+                        <div className="file-info">
+                          <p className="file-name" title={file.name}>{file.name}</p>
+                          <p className="file-date">{(file.size / 1024 / 1024).toFixed(2)} MB • Ready</p>
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={(e) => { 
+                            e.preventDefault(); // Prevent opening the link when clicking remove
+                            e.stopPropagation(); 
+                            handleRemoveFile(index); 
+                            URL.revokeObjectURL(fileUrl); // Clean up memory
+                          }} 
+                          style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }} 
+                          title="Remove file"
+                        >
+                          <MdCancel size={24} />
+                        </button>
+                      </AttachmentItem>
+                    );
+                  })}
+                </AttachmentsList>
+              </ExistingAttachmentsSection>
             )}
           </FormGroup>
 
@@ -2394,6 +2548,26 @@ function DataCapture() {
           </SubmitSection>
         </form>
       </Card>
+
+      <Modal
+        isOpen={showQRPreview}
+        onClose={() => setShowQRPreview(false)}
+        title="Scan to Pay"
+        maxWidth="400px"
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}>
+          <img
+            src={paymentQrUrl}
+            alt="Payment QR Code"
+            style={{
+              width: '100%',
+              height: 'auto',
+              borderRadius: '12px',
+              border: '1px solid #e5e7eb'
+            }}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

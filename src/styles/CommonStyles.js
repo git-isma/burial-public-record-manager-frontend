@@ -80,6 +80,15 @@ export const theme = {
     '3xl': '30px',
     '4xl': '36px'
   },
+  zIndex: {
+    dropdown: 1000,
+    sticky: 1020,
+    fixed: 1030,
+    modalBackdrop: 1040,
+    modal: 1050,
+    popover: 1060,
+    tooltip: 1070
+  },
   shadows: {
     xs: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
     sm: '0 2px 8px 0 rgba(0, 0, 0, 0.08)',
