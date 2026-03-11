@@ -57,6 +57,7 @@ export const API_ENDPOINTS = {
     LOCATIONS: '/locations',
     LATEST_APPLICANT_ID: '/public/latest-applicant-id',
     LATEST_RECEIPT_NO: '/public/latest-temp-receipt-number',
+    UPDATE_RECORD: (id) => `/public/records/${id}`,
   },
   UPLOAD: {
     PRESIGNED_URL: '/upload/presigned-url',
@@ -82,15 +83,18 @@ const apiService = {
     if (filters?.status) params.status = filters.status;
     if (filters?.deceasedName) params.deceasedName = filters.deceasedName;
     if (filters?.applicantEmail) params.applicantEmail = filters.applicantEmail;
+    if (filters?.id) params.id = filters.id;
     if (filters?.page) params.page = filters.page;
     if (filters?.limit) params.limit = filters.limit;
     return publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.GET_PUBLIC_RECORDS, { params });
   },
+  getRecordPublic: (id) => publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.GET_PUBLIC_RECORDS, { params: { id } }),
   getPresignedUrlPublic: (fileName, fileType, folder, extraData = {}) =>
     publicAxiosInstance.post(API_ENDPOINTS.PUBLIC.PRESIGNED_URL, { fileName, fileType, folder, ...extraData }),
   getLocations: () => publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.LOCATIONS),
   getLatestApplicantId: () => publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.LATEST_APPLICANT_ID),
   getLatestReceiptNo: () => publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.LATEST_RECEIPT_NO),
+  updateRecordPublic: (id, data) => publicAxiosInstance.put(API_ENDPOINTS.PUBLIC.UPDATE_RECORD(id), data),
 };
 
 export default apiService;

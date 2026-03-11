@@ -6,7 +6,7 @@ import { generateAcknowledgementPDF } from '../utils/acknowledgementGenerator';
 import { useSettings } from '../contexts/SettingsContext';
 import { useToast } from '../contexts/ToastContext';
 import { Card, PageHeader, Button, theme } from '../styles/CommonStyles';
-import { MdDownload, MdDescription, MdCalendarToday, MdPerson, MdLocationOn, MdCheckCircle, MdEmail, MdArrowBack, MdErrorOutline, MdInfo } from 'react-icons/md';
+import { MdDownload, MdDescription, MdCalendarToday, MdPerson, MdLocationOn, MdCheckCircle, MdEmail, MdArrowBack, MdErrorOutline, MdInfo, MdEdit } from 'react-icons/md';
 import EmptyState from '../components/EmptyState';
 import { TableSkeleton } from '../components/LoadingSkeleton';
 
@@ -671,6 +671,16 @@ function Records() {
                     </CardBody>
 
                     <CardFooter>
+                      {record.status === 'Rejected' && (
+                        <Button
+                          $variant="warning"
+                          onClick={() => navigate(`/data-capture?edit=${record._id}`)}
+                          style={{ marginRight: 'auto' }}
+                        >
+                          <MdEdit size={18} />
+                          Edit Application
+                        </Button>
+                      )}
                       <DownloadButton
                         $variant="primary"
                         onClick={() => handleDownloadAcknowledgement(record)}
