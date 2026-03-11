@@ -627,7 +627,7 @@ function DataCapture() {
     if (latestYear === currentYear) {
       // Same year, increment the number
       const nextNumber = latestNumber + 1;
-      const result = `APP-${currentYear}-${String(nextNumber).padStart(4, "0")}`;
+      const result = `APP-${currentYear}-${String(nextNumber).padStart(5, "0")}`;
       console.log(`Incrementing ${latestId} to ${result}`);
       return result;
     } else {
@@ -653,7 +653,7 @@ function DataCapture() {
     if (latestYear === currentYear) {
       // Same year, increment the number
       const nextNumber = latestNumber + 1;
-      return `TRCP-${currentYear}-${String(nextNumber).padStart(4, "0")}`;
+      return `TRCP-${currentYear}-${String(nextNumber).padStart(5, "0")}`;
     } else {
       // New year, start from 0001
       return `TRCP-${currentYear}-0001`;
@@ -665,7 +665,7 @@ function DataCapture() {
     middleName: "",
     lastName: "",
     idPassportNo: "",
-    gender: "",
+    gender: "Male",
     age: "",
     ageCategory: "",
     nationality: "",
@@ -698,6 +698,7 @@ function DataCapture() {
     burialPermitIssuedTo: "",
     burialPermitIssuedToContact: "",
     status: "Verification Pending",
+    rejectionReason: "",
     termsAccepted: false,
   });
   const [files, setFiles] = useState([]);
@@ -831,19 +832,38 @@ function DataCapture() {
 
   const fetchRecordData = async (id) => {
     try {
-      const res = await apiService.getRecord(id);
-      const record = res.data;
+      const res = await apiService.getRecordPublic(id);
+      let record = res.data.success ? res.data.data[0] : res.data;
+      
+      if (!record) {
+        error("Record not found");
+        navigate("/records");
+        return;
+      }
+
+      console.log("Fetched record for edit (public):", record);
+
+      // Normalize nationality for dropdown matching
+      let normalizedNationality = record.nationality || "";
+      const nLower = normalizedNationality.toLowerCase().trim();
+      if (nLower === "kenyan") normalizedNationality = "Kenya";
+      else if (nLower === "ugandan") normalizedNationality = "Uganda";
+      else if (nLower === "tanzanian") normalizedNationality = "Tanzania";
+      else if (nLower === "ethiopian") normalizedNationality = "Ethiopia";
+      else if (nLower === "somali") normalizedNationality = "Somalia";
+
       setFormData({
         firstName: record.firstName || "",
         middleName: record.middleName || "",
         lastName: record.lastName || "",
         idPassportNo: record.idPassportNo || "",
         gender: record.gender || "Male",
-        age: record.age || "",
+        age: (record.age !== undefined && record.age !== null) ? record.age : (record.ageCategory === 'Stillborn' ? 0 : record.ageCategory === 'Infant' ? 1 : ""),
         ageCategory: record.ageCategory || "",
-        nationality: record.nationality || "",
+        nationality: normalizedNationality,
         dateOfDeath: record.dateOfDeath ? record.dateOfDeath.split("T")[0] : "",
         dateOfBurial: record.dateOfBurial ? record.dateOfBurial.split("T")[0] : "",
+        applicantId: record.applicantId || generateNextApplicantId(null),
         applicantName: record.applicantName || "",
         applicantIdPassportNo: record.applicantIdPassportNo || "",
         applicantEmail: record.applicantEmail || "",
@@ -855,12 +875,12 @@ function DataCapture() {
         burialLocation: record.burialLocation || "",
         burialTime: record.burialTime || "",
         primaryService: record.primaryService || "Burial",
-        amountPayableBurial: record.amountPayableBurial || "",
-        amountToPayNow: record.amountToPayNow !== undefined ? record.amountToPayNow : (record.amountPayableBurial || ""),
+        amountPayableBurial: (record.amountPayableBurial !== undefined && record.amountPayableBurial !== null) ? record.amountPayableBurial : "",
+        amountToPayNow: (record.amountToPayNow !== undefined && record.amountToPayNow !== null) ? record.amountToPayNow : ((record.amountPayableBurial !== undefined && record.amountPayableBurial !== null) ? record.amountPayableBurial : ""),
         secondaryService: record.secondaryService || "None",
-        amountPayableSecondary: record.amountPayableSecondary || 0,
+        amountPayableSecondary: (record.amountPayableSecondary !== undefined && record.amountPayableSecondary !== null) ? record.amountPayableSecondary : 0,
         tertiaryService: record.tertiaryService || "None",
-        amountPayableTertiary: record.amountPayableTertiary || 0,
+        amountPayableTertiary: (record.amountPayableTertiary !== undefined && record.amountPayableTertiary !== null) ? record.amountPayableTertiary : 0,
         mpesaRefNo: record.mpesaRefNo || "",
         tempReceiptNo: record.tempReceiptNo || "",
         burialPermitNumber: record.burialPermitNumber || "",
@@ -870,6 +890,7 @@ function DataCapture() {
         burialPermitIssuedTo: record.burialPermitIssuedTo || "",
         burialPermitIssuedToContact: record.burialPermitIssuedToContact || "",
         status: record.status === "Pending" ? "Verification Pending" : (record.status || "Verification Pending"),
+        rejectionReason: record.rejectionReason || "",
       });
 
       // Load existing attachments
@@ -1187,7 +1208,7 @@ function DataCapture() {
           (!optionalFields.includes(key) || (value && value !== ""))
         ) {
           // Map "Verification Pending" to "Pending" for backend
-          if (key === "status" && value === "Verification Pending") {
+          if (key === "status" && (value === "Verification Pending" || value === "Rejected")) {
             recordData[key] = "Pending";
           } else {
             recordData[key] = value;
@@ -1208,9 +1229,10 @@ function DataCapture() {
       const { termsAccepted: _terms, ...dataToSubmit } = recordData;
 
       if (editId) {
-        // Update existing record (requires auth)
-        await apiService.updateRecord(editId, dataToSubmit);
-        success("Burial record updated successfully!");
+        // Update existing record (public)
+        await apiService.updateRecordPublic(editId, dataToSubmit);
+        success("Burial record updated and resubmitted successfully!");
+        navigate("/records");
       } else {
         // Create new record using public endpoint (no auth required)
         const res = await apiService.submitRecordPublic(dataToSubmit);
@@ -1403,8 +1425,8 @@ function DataCapture() {
     <div>
       <PageHeader>
         <div>
-          <h1>New Record</h1>
-          <p>Create and register a new burial record</p>
+          <h1>{editId ? (formData.status === "Rejected" ? "Resubmit Record" : "Update Record") : "New Record"}</h1>
+          <p>{editId ? (formData.status === "Rejected" ? "Correct rejected record and resubmit" : "Modify existing burial record") : "Create and register a new burial record"}</p>
         </div>
         {editId && (
           <Button $variant="secondary" onClick={() => navigate("/records")}>
@@ -1412,6 +1434,23 @@ function DataCapture() {
           </Button>
         )}
       </PageHeader>
+      
+      {editId && formData.status === "Rejected" && (
+        <Card style={{ borderLeft: "4px solid " + theme.colors.danger, marginBottom: "24px" }}>
+          <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+            <MdWarning size={24} color={theme.colors.danger} style={{ marginTop: "2px" }} />
+            <div>
+              <h3 style={{ margin: "0 0 8px 0", color: theme.colors.danger }}>Application Rejected</h3>
+              <p style={{ margin: 0, fontSize: "15px", color: theme.colors.gray700 }}>
+                <strong>Rejection Reason:</strong> {formData.rejectionReason}
+              </p>
+              <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: theme.colors.gray600 }}>
+                Please correct the information below and resubmit your application for verification.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <Card>
         <form onSubmit={handleSubmit}>
@@ -1674,7 +1713,7 @@ function DataCapture() {
                         : undefined
                 }
                 disabled={formData.ageCategory === "Stillborn"}
-                required
+                required={formData.ageCategory !== "Stillborn"}
               />
               {formData.ageCategory && (
                 <HelperText>
@@ -2514,7 +2553,7 @@ function DataCapture() {
               ) : (
                 <>
                   <MdSave size={20} />
-                  {editId ? "Update Record" : "Save Record"}
+                  {editId ? (formData.status === "Rejected" ? "Resubmit Application" : "Update Record") : "Save Record"}
                 </>
               )}
             </Button>
