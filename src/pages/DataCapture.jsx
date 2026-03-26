@@ -973,8 +973,12 @@ function DataCapture() {
     if (e.target.name === "ageCategory") {
       if (e.target.value === "Infant") {
         newFormData.age = "1";
+        newFormData.amountPayableBurial = "4000";
+        newFormData.amountToPayNow = "4000";
       } else if (e.target.value === "Stillborn") {
         newFormData.age = "0";
+        newFormData.amountPayableBurial = "4000";
+        newFormData.amountToPayNow = "4000";
       }
     }
 
@@ -986,12 +990,16 @@ function DataCapture() {
       if (locationName && burialTime) {
         let amount = 0;
 
-        // Try to get from dynamic location data fetched from API
-        const loc = locations.find(l => (typeof l === 'string' ? l === locationName : l.name === locationName));
-        if (loc && typeof loc === 'object') {
-          amount = burialTime === "Daytime" ? (loc.daytimePrice || 0) : (loc.nighttimePrice || 0);
+        if (newFormData.ageCategory === "Stillborn" || newFormData.ageCategory === "Infant") {
+          amount = 4000;
+        } else {
+          // Try to get from dynamic location data fetched from API
+          const loc = locations.find(l => (typeof l === 'string' ? l === locationName : l.name === locationName));
+          if (loc && typeof loc === 'object') {
+            amount = burialTime === "Daytime" ? (loc.daytimePrice || 0) : (loc.nighttimePrice || 0);
+          }
         }
-
+ 
         newFormData.amountPayableBurial = amount.toString();
         newFormData.amountToPayNow = amount.toString();
       }
@@ -1614,8 +1622,7 @@ function DataCapture() {
             <FormGroup>
               <label>
                 ID / Passport No{" "}
-                {formData.ageCategory !== "Stillborn" &&
-                  formData.ageCategory !== "Infant"
+                {formData.ageCategory === "Adult"
                   ? "*"
                   : ""}
               </label>
@@ -1623,11 +1630,10 @@ function DataCapture() {
                 name="idPassportNo"
                 value={formData.idPassportNo}
                 onChange={handleChange}
-                placeholder="Enter ID or Passport number"
-                required={
-                  formData.ageCategory !== "Stillborn" &&
-                  formData.ageCategory !== "Infant"
-                }
+                placeholder={["Stillborn", "Infant", "Child"].includes(formData.ageCategory) ? "Not required" : "Enter ID or Passport number"}
+                disabled={["Stillborn", "Infant", "Child"].includes(formData.ageCategory)}
+                style={["Stillborn", "Infant", "Child"].includes(formData.ageCategory) ? { backgroundColor: "#f3f4f6", opacity: 0.6, cursor: "not-allowed" } : {}}
+                required={formData.ageCategory === "Adult"}
               />
             </FormGroup>
             <FormGroup>
@@ -2111,7 +2117,7 @@ function DataCapture() {
             </FormGroup>
             <FormGroup>
               <label>
-                Amount to Pay Now *
+                Actual Amount Paid *
                 <Tooltip
                   content="Enter the actual amount being paid today. This defaults to the standard fee but can be lowered for committee-approved concessions or installments."
                   position="right"
