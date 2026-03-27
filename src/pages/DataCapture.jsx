@@ -1077,6 +1077,21 @@ function DataCapture() {
         error("Date of Death cannot be in the future");
         return;
       }
+
+      // Check date of burial vs date of death
+      if (formData.dateOfBurial) {
+        const dobArr = formData.dateOfBurial.split('-');
+        const dob = new Date(dobArr[0], dobArr[1] - 1, dobArr[2]);
+        const dodOnly = new Date(dod);
+        dodOnly.setHours(0, 0, 0, 0);
+        const dobOnly = new Date(dob);
+        dobOnly.setHours(0, 0, 0, 0);
+
+        if (dobOnly < dodOnly) {
+          error("Date of Burial cannot be earlier than Date of Death");
+          return;
+        }
+      }
     }
 
     // Validate required fields for deceased
