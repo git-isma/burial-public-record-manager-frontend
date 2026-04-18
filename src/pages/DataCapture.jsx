@@ -834,7 +834,7 @@ function DataCapture() {
     try {
       const res = await apiService.getRecordPublic(id);
       let record = res.data.success ? res.data.data[0] : res.data;
-      
+
       if (!record) {
         error("Record not found");
         navigate("/records");
@@ -999,7 +999,7 @@ function DataCapture() {
             amount = burialTime === "Daytime" ? (loc.daytimePrice || 0) : (loc.nighttimePrice || 0);
           }
         }
- 
+
         newFormData.amountPayableBurial = amount.toString();
         newFormData.amountToPayNow = amount.toString();
       }
@@ -1457,7 +1457,7 @@ function DataCapture() {
           </Button>
         )}
       </PageHeader>
-      
+
       {editId && formData.status === "Rejected" && (
         <Card style={{ borderLeft: "4px solid " + theme.colors.danger, marginBottom: "24px" }}>
           <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
@@ -2338,6 +2338,7 @@ function DataCapture() {
                 Auto-generated
               </HelperText>
             </FormGroup>
+
           </FormGrid>
 
           <SectionTitle>
@@ -2457,8 +2458,8 @@ function DataCapture() {
                     const fileUrl = URL.createObjectURL(file);
 
                     return (
-                      <AttachmentItem 
-                        key={index} 
+                      <AttachmentItem
+                        key={index}
                         href={fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -2473,15 +2474,15 @@ function DataCapture() {
                           <p className="file-name" title={file.name}>{file.name}</p>
                           <p className="file-date">{(file.size / 1024 / 1024).toFixed(2)} MB • Ready</p>
                         </div>
-                        <button 
-                          type="button" 
-                          onClick={(e) => { 
+                        <button
+                          type="button"
+                          onClick={(e) => {
                             e.preventDefault(); // Prevent opening the link when clicking remove
-                            e.stopPropagation(); 
-                            handleRemoveFile(index); 
+                            e.stopPropagation();
+                            handleRemoveFile(index);
                             URL.revokeObjectURL(fileUrl); // Clean up memory
-                          }} 
-                          style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }} 
+                          }}
+                          style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}
                           title="Remove file"
                         >
                           <MdCancel size={24} />
