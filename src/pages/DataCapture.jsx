@@ -852,6 +852,9 @@ function DataCapture() {
       else if (nLower === "ethiopian") normalizedNationality = "Ethiopia";
       else if (nLower === "somali") normalizedNationality = "Somalia";
 
+      // When editing, always set status to "Verification Pending" for resubmission
+      const editStatus = "Verification Pending";
+
       setFormData({
         firstName: record.firstName || "",
         middleName: record.middleName || "",
@@ -889,7 +892,7 @@ function DataCapture() {
         burialPermitIssuedByContact: record.burialPermitIssuedByContact || "",
         burialPermitIssuedTo: record.burialPermitIssuedTo || "",
         burialPermitIssuedToContact: record.burialPermitIssuedToContact || "",
-        status: record.status === "Pending" ? "Verification Pending" : (record.status || "Verification Pending"),
+        status: editStatus, // Always set to "Verification Pending" when editing
         rejectionReason: record.rejectionReason || "",
       });
 
@@ -1549,8 +1552,16 @@ function DataCapture() {
                 value={formData.applicantEmail}
                 onChange={handleChange}
                 placeholder="Enter applicant email"
+                disabled={!!editId}
+                style={editId ? { backgroundColor: "#f3f4f6", cursor: "not-allowed", opacity: 0.7 } : {}}
                 required
               />
+              {editId && (
+                <HelperText>
+                  <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
+                  Email cannot be changed during edit
+                </HelperText>
+              )}
             </FormGroup>
             <FormGroup>
               <label>Applicant Mobile No *</label>
@@ -2508,14 +2519,15 @@ function DataCapture() {
                   type="radio"
                   name="status"
                   value="Verification Pending"
-                  checked={formData.status === "Verification Pending"}
-                  onChange={handleChange}
+                  checked={true}
+                  readOnly
+                  disabled={!!editId}
                 />
                 <MdSchedule size={18} /> Verification Pending
               </label>
               <label
                 style={{
-                  opacity: formData.status === "Verified" ? 1 : 0.5,
+                  opacity: 0.5,
                   cursor: "not-allowed",
                 }}
               >
@@ -2523,15 +2535,14 @@ function DataCapture() {
                   type="radio"
                   name="status"
                   value="Verified"
-                  checked={formData.status === "Verified"}
-                  onChange={handleChange}
+                  checked={false}
                   disabled
                 />
                 <MdVerified size={18} /> Verified
               </label>
               <label
                 style={{
-                  opacity: formData.status === "Rejected" ? 1 : 0.5,
+                  opacity: 0.5,
                   cursor: "not-allowed",
                 }}
               >
@@ -2539,13 +2550,18 @@ function DataCapture() {
                   type="radio"
                   name="status"
                   value="Rejected"
-                  checked={formData.status === "Rejected"}
-                  onChange={handleChange}
+                  checked={false}
                   disabled
                 />
                 <MdCancel size={18} /> Rejected
               </label>
             </RadioGroup>
+            <HelperText style={{ marginTop: "8px" }}>
+              <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
+              {editId 
+                ? "Status is automatically set to 'Verification Pending' when resubmitting" 
+                : "All new applications start with 'Verification Pending' status"}
+            </HelperText>
           </FormGroup>
 
           <TermsSection>
