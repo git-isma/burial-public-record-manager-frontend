@@ -9,6 +9,7 @@ import { Card, PageHeader, Button, theme } from '../styles/CommonStyles';
 import { MdDownload, MdDescription, MdCalendarToday, MdPerson, MdLocationOn, MdCheckCircle, MdEmail, MdArrowBack, MdErrorOutline, MdInfo, MdEdit } from 'react-icons/md';
 import EmptyState from '../components/EmptyState';
 import { TableSkeleton } from '../components/LoadingSkeleton';
+import ModernDatePicker from '../components/ModernDatePicker';
 
 const RecordsContainer = styled.div`
   font-family: ${theme.fonts.body};
@@ -16,6 +17,8 @@ const RecordsContainer = styled.div`
 
 const FilterSection = styled(Card)`
   margin-bottom: ${theme.spacing.xl};
+  position: relative;
+  z-index: 10;
   h3 {
     font-size: 18px;
     font-weight: 700;
@@ -93,8 +96,8 @@ const FormGroup = styled.div`
     }
   }
   input, select {
-    padding: 10px 12px;
-    border: 1px solid ${theme.colors.gray300};
+    padding: 12px 16px;
+    border: 2px solid ${theme.colors.gray300};
     border-radius: ${theme.borderRadius.md};
     font-size: 14px;
     color: ${theme.colors.textPrimary};
@@ -384,7 +387,7 @@ function Records() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, total: 0 });
-  const [filters, setFilters] = useState({ status: '', deceasedName: '' });
+  const [filters, setFilters] = useState({ status: '', deceasedName: '', startDate: '', endDate: '' });
   const [applicantEmail, setApplicantEmail] = useState('');
   const [emailInput, setEmailInput] = useState('');
 
@@ -425,6 +428,8 @@ function Records() {
       // Only add filters if they have values
       if (currentFilters.status) payload.status = currentFilters.status;
       if (currentFilters.deceasedName) payload.deceasedName = currentFilters.deceasedName;
+      if (currentFilters.startDate) payload.startDate = currentFilters.startDate;
+      if (currentFilters.endDate) payload.endDate = currentFilters.endDate;
 
       const res = await apiService.getPublicRecords(payload);
       setRecords(res.data.data || []);
@@ -449,11 +454,11 @@ function Records() {
   const applyFilters = () => {
     const newPage = 1;
     setPagination({ ...pagination, currentPage: newPage });
-    fetchRecords({ page: newPage });
+    fetchRecords({ page: newPage, filters: filters });
   };
 
   const resetFilters = () => {
-    const emptyFilters = { status: '', deceasedName: '' };
+    const emptyFilters = { status: '', deceasedName: '', startDate: '', endDate: '' };
     const newPage = 1;
     setFilters(emptyFilters);
     setPagination({ ...pagination, currentPage: newPage });
@@ -485,7 +490,7 @@ function Records() {
   const clearApplicantEmail = () => {
     setApplicantEmail('');
     setRecords([]);
-    setFilters({ status: '', deceasedName: '' });
+    setFilters({ status: '', deceasedName: '', startDate: '', endDate: '' });
     setEmailInput('');
     localStorage.removeItem('burial_applicant_email');
   };
@@ -558,6 +563,24 @@ function Records() {
                     <option value="Verified">Verified</option>
                     <option value="Rejected">Rejected</option>
                   </select>
+                </FormGroup>
+                <FormGroup>
+                  <label>From Date (Death/Burial)</label>
+                  <ModernDatePicker
+                    value={filters.startDate}
+                    onChange={handleFilterChange}
+                    name="startDate"
+                    placeholder="From date"
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <label>To Date (Death/Burial)</label>
+                  <ModernDatePicker
+                    value={filters.endDate}
+                    onChange={handleFilterChange}
+                    name="endDate"
+                    placeholder="To date"
+                  />
                 </FormGroup>
               </FiltersGrid>
               <FilterButtons>

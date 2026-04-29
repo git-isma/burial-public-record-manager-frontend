@@ -86,6 +86,8 @@ const apiService = {
     if (filters?.id) params.id = filters.id;
     if (filters?.page) params.page = filters.page;
     if (filters?.limit) params.limit = filters.limit;
+    if (filters?.startDate) params.startDate = filters.startDate;
+    if (filters?.endDate) params.endDate = filters.endDate;
     return publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.GET_PUBLIC_RECORDS, { params });
   },
   getRecordPublic: (id) => publicAxiosInstance.get(API_ENDPOINTS.PUBLIC.GET_PUBLIC_RECORDS, { params: { id } }),
