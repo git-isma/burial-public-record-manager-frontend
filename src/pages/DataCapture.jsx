@@ -1030,6 +1030,10 @@ function DataCapture() {
     setFiles((prevFiles) => prevFiles.filter((_, index) => index !== indexToRemove));
   };
 
+  const handleRemoveExistingAttachment = (indexToRemove) => {
+    setExistingAttachments((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -2427,6 +2431,29 @@ function DataCapture() {
                         <p className="file-date">Uploaded: {uploadedDate}</p>
                       </div>
                       <div className="download-icon">⬇️</div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleRemoveExistingAttachment(index);
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#ef4444",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContents: "center",
+                          padding: "4px",
+                          marginLeft: "8px",
+                          zIndex: 2
+                        }}
+                        title="Remove existing attachment"
+                      >
+                        <MdCancel size={24} />
+                      </button>
                     </AttachmentItem>
                   );
                 })}

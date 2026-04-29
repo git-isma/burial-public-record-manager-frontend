@@ -26,8 +26,11 @@ const DatePickerWrapper = styled.div`
     body.dark-theme & {
       background: #2d2d2d;
       border-color: #3d3d3d;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     }
+  }
+
+  .react-datepicker-popper {
+    z-index: 9999 !important;
   }
 
   .react-datepicker__header {
@@ -378,6 +381,7 @@ function ModernDatePicker({ value, onChange, name, placeholder = "dd - mm - yyyy
         dropdownMode="select"
         yearDropdownItemNumber={100}
         scrollableYearDropdown
+        maxDate={new Date()}
         {...props}
       />
     </DatePickerWrapper>
