@@ -1508,20 +1508,22 @@ function DataCapture() {
                     flex: 1,
                   }}
                 />
-                <Button
-                  type="button"
-                  onClick={refreshApplicantId}
-                  style={{
-                    padding: "10px 16px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    whiteSpace: "nowrap",
-                  }}
-                  title="Refresh Applicant ID"
-                >
-                  <MdRefresh size={18} />
-                </Button>
+                {!editId && (
+                  <Button
+                    type="button"
+                    onClick={refreshApplicantId}
+                    style={{
+                      padding: "10px 16px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      whiteSpace: "nowrap",
+                    }}
+                    title="Refresh Applicant ID"
+                  >
+                    <MdRefresh size={18} />
+                  </Button>
+                )}
               </div>
               <HelperText>
                 <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
@@ -2334,20 +2336,22 @@ function DataCapture() {
                     flex: 1,
                   }}
                 />
-                <Button
-                  type="button"
-                  onClick={refreshReceiptNo}
-                  style={{
-                    padding: "10px 16px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    whiteSpace: "nowrap",
-                  }}
-                  title="Refresh Receipt No"
-                >
-                  <MdRefresh size={18} />
-                </Button>
+                {!editId && (
+                  <Button
+                    type="button"
+                    onClick={refreshReceiptNo}
+                    style={{
+                      padding: "10px 16px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      whiteSpace: "nowrap",
+                    }}
+                    title="Refresh Receipt No"
+                  >
+                    <MdRefresh size={18} />
+                  </Button>
+                )}
               </div>
               <HelperText>
                 <MdInfoOutline size={14} style={{ marginRight: "4px" }} />
